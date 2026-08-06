@@ -1,0 +1,9 @@
+# Dependencias
+node_modules/
+
+# Archivos de entorno local (NO subir a Git)
+.env
+.env.local
+
+# Archivos del sistema
+.DS_Store

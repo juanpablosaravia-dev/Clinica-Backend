@@ -1,2 +1,3 @@
-allowBuilds:
-  bcrypt: set this to true or false
+# El proyecto hashea con bcryptjs (JavaScript puro), así que ninguna
+# dependencia necesita compilarse durante la instalación.
+onlyBuiltDependencies: []

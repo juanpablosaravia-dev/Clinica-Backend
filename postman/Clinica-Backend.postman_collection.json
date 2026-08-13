@@ -1,11 +1,12 @@
 {
   "info": {
-    "name": "Clinica-Backend - Registro (Semana 1)",
-    "description": "Coleccion de pruebas para GET /health, GET /coberturas y POST /auth/registro.",
+    "name": "Clinica-Backend - Semana 1",
+    "description": "Coleccion de pruebas de la Semana 1: GET /health, GET /coberturas, POST /auth/registro, POST /auth/login y los endpoints protegidos GET /auth/perfil (verificarToken) y GET /auth/admin (verificarRol).\n\nOrden sugerido: correr 'POST /auth/registro - exito' y luego 'POST /auth/login - exito', que guarda el JWT en la variable de coleccion {{token}} para los endpoints protegidos.\n\nPara probar el 200 de GET /auth/admin hace falta un usuario con rol admin: promover el usuario registrado con UPDATE usuario SET rol='admin', id_sede=1 WHERE email='pedro@example.com'; y volver a loguear.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000" }
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" }
   ],
   "item": [
     {
@@ -62,6 +63,222 @@
           "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Soria\",\n  \"dni\": \"36000962\",\n  \"password\": \"Admin123\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
         },
         "url": "{{baseUrl}}/auth/registro"
+      }
+    },
+    {
+      "name": "POST /auth/login - exito (guarda {{token}})",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const cuerpo = pm.response.json();",
+              "",
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+              "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+              "  pm.expect(cuerpo.codigo).to.eql(200);",
+              "  pm.expect(cuerpo.estado).to.eql('ok');",
+              "});",
+              "pm.test('Devuelve un token', () => pm.expect(cuerpo.datos.token).to.be.a('string').and.not.empty);",
+              "",
+              "if (cuerpo.datos && cuerpo.datos.token) {",
+              "  pm.collectionVariables.set('token', cuerpo.datos.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"pedro@example.com\",\n  \"password\": \"Admin123\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/login"
+      }
+    },
+    {
+      "name": "POST /auth/login - password incorrecta (401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+              "pm.test('Estado Credenciales invalidas', () => pm.expect(pm.response.json().estado).to.eql('Credenciales inválidas'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"pedro@example.com\",\n  \"password\": \"passwordIncorrecta\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/login"
+      }
+    },
+    {
+      "name": "POST /auth/login - email inexistente (401, mismo mensaje)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+              "pm.test('No revela si el email existe', () => pm.expect(pm.response.json().estado).to.eql('Credenciales inválidas'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"noexiste@example.com\",\n  \"password\": \"Admin123\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/login"
+      }
+    },
+    {
+      "name": "POST /auth/login - falta campo requerido (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"pedro@example.com\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/login"
+      }
+    },
+    {
+      "name": "GET /auth/perfil - con token (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const cuerpo = pm.response.json();",
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Trae los datos del usuario logueado', () => {",
+              "  pm.expect(cuerpo.datos).to.include.keys('id', 'nombre', 'apellido', 'email', 'rol', 'id_sede');",
+              "});",
+              "pm.test('Nunca expone la password', () => pm.expect(cuerpo.datos).to.not.have.property('password'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/auth/perfil"
+      }
+    },
+    {
+      "name": "GET /auth/perfil - sin token (401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+              "pm.test('Estado Token no proporcionado', () => pm.expect(pm.response.json().estado).to.eql('Token no proporcionado'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/auth/perfil"
+      }
+    },
+    {
+      "name": "GET /auth/perfil - token invalido (401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+              "pm.test('Estado Token invalido', () => pm.expect(pm.response.json().estado).to.eql('Token inválido'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer token.invalido.aqui" }
+        ],
+        "url": "{{baseUrl}}/auth/perfil"
+      }
+    },
+    {
+      "name": "GET /auth/admin - rol no permitido (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 403', () => pm.response.to.have.status(403));",
+              "pm.test('Estado sin permisos', () => pm.expect(pm.response.json().estado).to.eql('No tenés permisos para acceder a este recurso'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "description": "Correr con el {{token}} del paciente registrado. Debe rechazar con 403.",
+        "url": "{{baseUrl}}/auth/admin"
+      }
+    },
+    {
+      "name": "GET /auth/admin - rol admin (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Concede el acceso', () => pm.expect(pm.response.json().datos.rol).to.eql('admin'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "description": "Requiere que {{token}} sea de un usuario con rol admin. Promover el usuario en la base (UPDATE usuario SET rol='admin', id_sede=1 WHERE email='pedro@example.com';) y volver a correr el login antes de este request.",
+        "url": "{{baseUrl}}/auth/admin"
       }
     }
   ]

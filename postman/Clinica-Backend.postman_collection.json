@@ -1,0 +1,68 @@
+{
+  "info": {
+    "name": "Clinica-Backend - Registro (Semana 1)",
+    "description": "Coleccion de pruebas para GET /health, GET /coberturas y POST /auth/registro.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" }
+  ],
+  "item": [
+    {
+      "name": "GET /health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "GET /coberturas",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/coberturas"
+      }
+    },
+    {
+      "name": "POST /auth/registro - exito",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Soria\",\n  \"dni\": \"36000961\",\n  \"email\": \"pedro@example.com\",\n  \"password\": \"Admin123\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
+        },
+        "url": "{{baseUrl}}/auth/registro"
+      }
+    },
+    {
+      "name": "POST /auth/registro - DNI/Email duplicado",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Soria\",\n  \"dni\": \"36000961\",\n  \"email\": \"pedro@example.com\",\n  \"password\": \"Admin123\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
+        },
+        "url": "{{baseUrl}}/auth/registro"
+      }
+    },
+    {
+      "name": "POST /auth/registro - falta campo requerido",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Soria\",\n  \"dni\": \"36000962\",\n  \"password\": \"Admin123\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
+        },
+        "url": "{{baseUrl}}/auth/registro"
+      }
+    }
+  ]
+}

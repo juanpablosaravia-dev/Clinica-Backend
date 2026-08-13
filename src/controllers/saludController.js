@@ -1,13 +1,10 @@
-import pool from '../database/conexion.js';
+import { verificarConexionBd } from '../services/saludService.js';
 import { enviarRespuesta } from '../utils/respuesta.js';
 
 export async function verificarSalud(req, res) {
   try {
-    await pool.query('SELECT 1');
-    return enviarRespuesta(res, 200, {
-      mensaje: 'Conexión a la base de datos exitosa',
-      timestamp: new Date().toISOString(),
-    });
+    const estadoBd = await verificarConexionBd();
+    return enviarRespuesta(res, 200, estadoBd);
   } catch (error) {
     return enviarRespuesta(res, 500, null, 'Error de conexión a la base de datos');
   }

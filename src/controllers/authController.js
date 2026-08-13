@@ -2,6 +2,8 @@ import bcrypt from 'bcryptjs';
 import pool from '../database/conexion.js';
 import { enviarRespuesta } from '../utils/respuesta.js';
 
+const ER_DUP_ENTRY = 1062;
+
 const CAMPOS_REQUERIDOS = [
   'nombre',
   'apellido',
@@ -44,12 +46,24 @@ export async function registrarPaciente(req, res) {
 
     const passwordHasheada = await bcrypt.hash(password, 10);
 
-    // telefono es NOT NULL en la tabla pero no forma parte de la consigna de registro
-    const [resultado] = await pool.query(
-      `INSERT INTO usuario (nombre, apellido, dni, email, password, fecha_nacimiento, telefono, rol, id_sede, id_cobertura)
-       VALUES (?, ?, ?, ?, ?, ?, '', 'paciente', NULL, ?)`,
-      [nombre, apellido, dni, email, passwordHasheada, fecha_nacimiento, id_cobertura]
-    );
+    let resultado;
+    try {
+      // telefono es NOT NULL en la tabla pero no forma parte de la consigna de registro
+      [resultado] = await pool.query(
+        `INSERT INTO usuario (nombre, apellido, dni, email, password, fecha_nacimiento, telefono, rol, id_sede, id_cobertura)
+         VALUES (?, ?, ?, ?, ?, ?, '', 'paciente', NULL, ?)`,
+        [nombre, apellido, dni, email, passwordHasheada, fecha_nacimiento, id_cobertura]
+      );
+    } catch (errorInsert) {
+      // Red de seguridad ante condición de carrera: si dos registros con el
+      // mismo dni/email llegan casi al mismo tiempo, el SELECT previo puede
+      // no alcanzar a detectarlo, pero el UNIQUE de la base (ver
+      // src/database/migraciones.js) sí lo rechaza acá.
+      if (errorInsert.errno === ER_DUP_ENTRY) {
+        return enviarRespuesta(res, 400, null, 'El DNI o Email ya se encuentra registrado');
+      }
+      throw errorInsert;
+    }
 
     return enviarRespuesta(res, 201, {
       mensaje: 'Usuario paciente registrado con éxito',

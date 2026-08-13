@@ -36,13 +36,3 @@ export async function obtenerPerfil(req, res) {
     return manejarError(res, error);
   }
 }
-
-// Endpoint de prueba de verificarRol: sólo se alcanza con rol 'admin'.
-// No hay lógica de negocio que extraer, solo eco del usuario autenticado.
-export function verificarAccesoAdmin(req, res) {
-  return enviarRespuesta(res, 200, {
-    mensaje: 'Acceso administrativo concedido',
-    id: req.usuario.id,
-    rol: req.usuario.rol,
-  });
-}

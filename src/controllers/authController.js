@@ -1,13 +1,6 @@
 import * as authService from '../services/authService.js';
 import { enviarRespuesta } from '../utils/respuesta.js';
-import { ErrorHttp } from '../utils/errorHttp.js';
-
-function manejarError(res, error) {
-  if (error instanceof ErrorHttp) {
-    return enviarRespuesta(res, error.codigo, null, error.message);
-  }
-  return enviarRespuesta(res, 500, null, 'Error interno del servidor');
-}
+import { manejarError } from '../utils/manejarError.js';
 
 export async function registrarPaciente(req, res) {
   try {

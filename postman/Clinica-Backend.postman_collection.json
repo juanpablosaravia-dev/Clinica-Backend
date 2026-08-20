@@ -1,12 +1,15 @@
 {
   "info": {
-    "name": "Clinica-Backend - Semana 1",
-    "description": "Coleccion de pruebas de la Semana 1: GET /health, GET /coberturas, POST /auth/registro, POST /auth/login y el endpoint protegido GET /auth/perfil (verificarToken).\n\nOrden sugerido: correr 'POST /auth/registro - exito' y luego 'POST /auth/login - exito', que guarda el JWT en la variable de coleccion {{token}} para los endpoints protegidos.",
+    "name": "Clinica-Backend - Semana 1 y 2",
+    "description": "Coleccion de pruebas de la Semana 1 (GET /health, GET /coberturas, POST /auth/registro, POST /auth/login, GET /auth/perfil) y de la Semana 2 (CRUD de /sedes y /especialidades, protegido por rol 'admin').\n\nOrden sugerido: correr 'POST /auth/registro - exito' y luego 'POST /auth/login - exito' (guarda {{token}}, rol paciente). Para probar /sedes y /especialidades hace falta ademas 'POST /auth/login - admin' (guarda {{tokenAdmin}}); requiere un usuario con rol 'admin' con password hasheada real en la base (el hash del seed de ScriptSQL.sql para mgomez@clinica.com es un placeholder, no sirve para loguear).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:3000" },
-    { "key": "token", "value": "" }
+    { "key": "token", "value": "" },
+    { "key": "tokenAdmin", "value": "" },
+    { "key": "sedeId", "value": "" },
+    { "key": "especialidadId", "value": "" }
   ],
   "item": [
     {
@@ -233,6 +236,337 @@
           { "key": "Authorization", "value": "Bearer token.invalido.aqui" }
         ],
         "url": "{{baseUrl}}/auth/perfil"
+      }
+    },
+    {
+      "name": "POST /auth/login - admin (guarda {{tokenAdmin}})",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const cuerpo = pm.response.json();",
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "if (cuerpo.datos && cuerpo.datos.token) {",
+              "  pm.collectionVariables.set('tokenAdmin', cuerpo.datos.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"mgomez@clinica.com\",\n  \"password\": \"<password real del usuario admin>\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/login"
+      }
+    },
+    {
+      "name": "GET /sedes - sin token (401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 401', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/sedes"
+      }
+    },
+    {
+      "name": "GET /sedes - rol paciente (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/sedes"
+      }
+    },
+    {
+      "name": "GET /sedes - admin (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Formato uniforme', () => {",
+              "  const cuerpo = pm.response.json();",
+              "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "url": "{{baseUrl}}/sedes"
+      }
+    },
+    {
+      "name": "POST /sedes - admin (201, guarda {{sedeId}})",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const cuerpo = pm.response.json();",
+              "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+              "if (cuerpo.datos && cuerpo.datos.id) {",
+              "  pm.collectionVariables.set('sedeId', cuerpo.datos.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Sede Test\",\n  \"direccion\": \"Calle Falsa 123\",\n  \"telefono\": \"3420000000\"\n}"
+        },
+        "url": "{{baseUrl}}/sedes"
+      }
+    },
+    {
+      "name": "PUT /sedes/{{sedeId}} - admin (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Sede Test Editada\",\n  \"direccion\": \"Calle Falsa 456\",\n  \"telefono\": \"3420000001\"\n}"
+        },
+        "url": "{{baseUrl}}/sedes/{{sedeId}}"
+      }
+    },
+    {
+      "name": "DELETE /sedes/{{sedeId}} - admin, sin dependencias (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "url": "{{baseUrl}}/sedes/{{sedeId}}"
+      }
+    },
+    {
+      "name": "DELETE /sedes/1 - admin, con dependencias (409)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "url": "{{baseUrl}}/sedes/1"
+      }
+    },
+    {
+      "name": "GET /especialidades - rol paciente (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/especialidades"
+      }
+    },
+    {
+      "name": "GET /especialidades - admin (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "url": "{{baseUrl}}/especialidades"
+      }
+    },
+    {
+      "name": "POST /especialidades - admin (201, guarda {{especialidadId}})",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const cuerpo = pm.response.json();",
+              "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+              "if (cuerpo.datos && cuerpo.datos.id) {",
+              "  pm.collectionVariables.set('especialidadId', cuerpo.datos.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"descripcion\": \"Especialidad Test\"\n}"
+        },
+        "url": "{{baseUrl}}/especialidades"
+      }
+    },
+    {
+      "name": "PUT /especialidades/{{especialidadId}} - admin (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"descripcion\": \"Especialidad Test Editada\"\n}"
+        },
+        "url": "{{baseUrl}}/especialidades/{{especialidadId}}"
+      }
+    },
+    {
+      "name": "DELETE /especialidades/{{especialidadId}} - admin, sin dependencias (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "url": "{{baseUrl}}/especialidades/{{especialidadId}}"
+      }
+    },
+    {
+      "name": "DELETE /especialidades/1 - admin, con dependencias (409)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+        ],
+        "url": "{{baseUrl}}/especialidades/1"
       }
     }
   ]

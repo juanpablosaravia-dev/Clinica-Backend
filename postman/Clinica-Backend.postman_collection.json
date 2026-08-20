@@ -1,573 +1,814 @@
 {
   "info": {
     "name": "Clinica-Backend - Semana 1 y 2",
-    "description": "Coleccion de pruebas de la Semana 1 (GET /health, GET /coberturas, POST /auth/registro, POST /auth/login, GET /auth/perfil) y de la Semana 2 (CRUD de /sedes y /especialidades, protegido por rol 'admin').\n\nOrden sugerido: correr 'POST /auth/registro - exito' y luego 'POST /auth/login - exito' (guarda {{token}}, rol paciente). Para probar /sedes y /especialidades hace falta ademas 'POST /auth/login - admin' (guarda {{tokenAdmin}}); requiere un usuario con rol 'admin' con password hasheada real en la base (el hash del seed de ScriptSQL.sql para mgomez@clinica.com es un placeholder, no sirve para loguear).",
+    "description": "Coleccion organizada en carpetas por recurso. Antes de correr nada:\n\n1. Importar tambien el archivo 'Clinica-Backend.postman_environment.json' y seleccionarlo como Environment activo (arriba a la derecha en Postman). Ahi estan las credenciales de cada usuario de prueba (paciente, admin, medico, operador), separadas de la coleccion para que sea mas facil de leer.\n2. Con la base ya cargada (ScriptSQL.sql), correr una vez 'npm run seed:usuarios' en el backend: les setea password real a los usuarios admin/medico/operador del seed (sus hashes originales son placeholders y no sirven para loguear). Las passwords que deja ese script son las mismas que ya estan en el Environment.\n3. Levantar el backend con 'npm run dev'.\n\nOrden sugerido para correr las carpetas: Salud -> Autenticacion -> Sedes -> Especialidades -> Coberturas -> Agenda. Los folders de Sedes/Especialidades/Coberturas necesitan haber corrido antes 'POST /auth/login - admin' (dentro de Autenticacion). El folder de Agenda necesita 'POST /auth/login - medico' y 'POST /auth/login - operador'.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000" },
     { "key": "token", "value": "" },
     { "key": "tokenAdmin", "value": "" },
+    { "key": "tokenMedico", "value": "" },
+    { "key": "tokenOperador", "value": "" },
     { "key": "sedeId", "value": "" },
-    { "key": "especialidadId", "value": "" }
+    { "key": "especialidadId", "value": "" },
+    { "key": "coberturaId", "value": "" },
+    { "key": "agendaId", "value": "" }
   ],
   "item": [
     {
-      "name": "GET /health",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/health"
-      }
+      "name": "Salud",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
     },
     {
-      "name": "GET /coberturas",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/coberturas"
-      }
-    },
-    {
-      "name": "POST /auth/registro - exito",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Soria\",\n  \"dni\": \"36000961\",\n  \"email\": \"pedro@example.com\",\n  \"password\": \"Admin123\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
+      "name": "Autenticacion",
+      "description": "Registro de pacientes y login de los 4 roles. Cada login guarda su token en una variable de coleccion distinta ({{token}} = paciente, {{tokenAdmin}}, {{tokenMedico}}, {{tokenOperador}}) para no pisarse entre si.",
+      "item": [
+        {
+          "name": "POST /auth/registro - exito (paciente)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{pacienteNombre}}\",\n  \"apellido\": \"{{pacienteApellido}}\",\n  \"dni\": \"{{pacienteDni}}\",\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
+            },
+            "url": "{{baseUrl}}/auth/registro"
+          }
         },
-        "url": "{{baseUrl}}/auth/registro"
-      }
-    },
-    {
-      "name": "POST /auth/registro - DNI/Email duplicado",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Soria\",\n  \"dni\": \"36000961\",\n  \"email\": \"pedro@example.com\",\n  \"password\": \"Admin123\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
+        {
+          "name": "POST /auth/registro - DNI/Email duplicado (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Responde 400', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{pacienteNombre}}\",\n  \"apellido\": \"{{pacienteApellido}}\",\n  \"dni\": \"{{pacienteDni}}\",\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
+            },
+            "url": "{{baseUrl}}/auth/registro"
+          }
         },
-        "url": "{{baseUrl}}/auth/registro"
-      }
-    },
-    {
-      "name": "POST /auth/registro - falta campo requerido",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Soria\",\n  \"dni\": \"36000962\",\n  \"password\": \"Admin123\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
+        {
+          "name": "POST /auth/registro - falta campo requerido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Responde 400', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{pacienteNombre}}\",\n  \"apellido\": \"{{pacienteApellido}}\",\n  \"dni\": \"{{pacienteDniSinEmail}}\",\n  \"password\": \"{{pacientePassword}}\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
+            },
+            "url": "{{baseUrl}}/auth/registro"
+          }
         },
-        "url": "{{baseUrl}}/auth/registro"
-      }
-    },
-    {
-      "name": "POST /auth/login - exito (guarda {{token}})",
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "const cuerpo = pm.response.json();",
-              "",
-              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
-              "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
-              "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
-              "  pm.expect(cuerpo.codigo).to.eql(200);",
-              "  pm.expect(cuerpo.estado).to.eql('ok');",
-              "});",
-              "pm.test('Devuelve un token', () => pm.expect(cuerpo.datos.token).to.be.a('string').and.not.empty);",
-              "",
-              "if (cuerpo.datos && cuerpo.datos.token) {",
-              "  pm.collectionVariables.set('token', cuerpo.datos.token);",
-              "}"
-            ]
+          "name": "POST /auth/login - paciente (guarda {{token}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(200);",
+                  "  pm.expect(cuerpo.estado).to.eql('ok');",
+                  "});",
+                  "pm.test('Devuelve un token', () => pm.expect(cuerpo.datos.token).to.be.a('string').and.not.empty);",
+                  "",
+                  "if (cuerpo.datos && cuerpo.datos.token) {",
+                  "  pm.collectionVariables.set('token', cuerpo.datos.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
           }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"pedro@example.com\",\n  \"password\": \"Admin123\"\n}"
         },
-        "url": "{{baseUrl}}/auth/login"
-      }
-    },
-    {
-      "name": "POST /auth/login - password incorrecta (401)",
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 401', () => pm.response.to.have.status(401));",
-              "pm.test('Estado Credenciales invalidas', () => pm.expect(pm.response.json().estado).to.eql('Credenciales inválidas'));"
-            ]
+          "name": "POST /auth/login - password incorrecta (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Estado Credenciales invalidas', () => pm.expect(pm.response.json().estado).to.eql('Credenciales inválidas'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"passwordIncorrecta\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
           }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"pedro@example.com\",\n  \"password\": \"passwordIncorrecta\"\n}"
         },
-        "url": "{{baseUrl}}/auth/login"
-      }
-    },
-    {
-      "name": "POST /auth/login - email inexistente (401, mismo mensaje)",
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 401', () => pm.response.to.have.status(401));",
-              "pm.test('No revela si el email existe', () => pm.expect(pm.response.json().estado).to.eql('Credenciales inválidas'));"
-            ]
+          "name": "POST /auth/login - email inexistente (401, mismo mensaje)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test('No revela si el email existe', () => pm.expect(pm.response.json().estado).to.eql('Credenciales inválidas'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"noexiste@example.com\",\n  \"password\": \"{{pacientePassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
           }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"noexiste@example.com\",\n  \"password\": \"Admin123\"\n}"
         },
-        "url": "{{baseUrl}}/auth/login"
-      }
-    },
-    {
-      "name": "POST /auth/login - falta campo requerido (400)",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"pedro@example.com\"\n}"
+        {
+          "name": "POST /auth/login - falta campo requerido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Responde 400', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{pacienteEmail}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
         },
-        "url": "{{baseUrl}}/auth/login"
-      }
-    },
-    {
-      "name": "GET /auth/perfil - con token (200)",
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "const cuerpo = pm.response.json();",
-              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
-              "pm.test('Trae los datos del usuario logueado', () => {",
-              "  pm.expect(cuerpo.datos).to.include.keys('id', 'nombre', 'apellido', 'email', 'rol', 'id_sede');",
-              "});",
-              "pm.test('Nunca expone la password', () => pm.expect(cuerpo.datos).to.not.have.property('password'));"
-            ]
+          "name": "GET /auth/perfil - con token (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae los datos del usuario logueado', () => {",
+                  "  pm.expect(cuerpo.datos).to.include.keys('id', 'nombre', 'apellido', 'email', 'rol', 'id_sede');",
+                  "});",
+                  "pm.test('Nunca expone la password', () => pm.expect(cuerpo.datos).to.not.have.property('password'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/auth/perfil"
           }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" }
-        ],
-        "url": "{{baseUrl}}/auth/perfil"
-      }
-    },
-    {
-      "name": "GET /auth/perfil - sin token (401)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 401', () => pm.response.to.have.status(401));",
-              "pm.test('Estado Token no proporcionado', () => pm.expect(pm.response.json().estado).to.eql('Token no proporcionado'));"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/auth/perfil"
-      }
-    },
-    {
-      "name": "GET /auth/perfil - token invalido (401)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 401', () => pm.response.to.have.status(401));",
-              "pm.test('Estado Token invalido', () => pm.expect(pm.response.json().estado).to.eql('Token inválido'));"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer token.invalido.aqui" }
-        ],
-        "url": "{{baseUrl}}/auth/perfil"
-      }
-    },
-    {
-      "name": "POST /auth/login - admin (guarda {{tokenAdmin}})",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "const cuerpo = pm.response.json();",
-              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
-              "if (cuerpo.datos && cuerpo.datos.token) {",
-              "  pm.collectionVariables.set('tokenAdmin', cuerpo.datos.token);",
-              "}"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"mgomez@clinica.com\",\n  \"password\": \"<password real del usuario admin>\"\n}"
         },
-        "url": "{{baseUrl}}/auth/login"
-      }
-    },
-    {
-      "name": "GET /sedes - sin token (401)",
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 401', () => pm.response.to.have.status(401));"
-            ]
+          "name": "GET /auth/perfil - sin token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Estado Token no proporcionado', () => pm.expect(pm.response.json().estado).to.eql('Token no proporcionado'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/perfil"
           }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/sedes"
-      }
-    },
-    {
-      "name": "GET /sedes - rol paciente (403)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 403', () => pm.response.to.have.status(403));"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" }
-        ],
-        "url": "{{baseUrl}}/sedes"
-      }
-    },
-    {
-      "name": "GET /sedes - admin (200)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
-              "pm.test('Formato uniforme', () => {",
-              "  const cuerpo = pm.response.json();",
-              "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
-        ],
-        "url": "{{baseUrl}}/sedes"
-      }
-    },
-    {
-      "name": "POST /sedes - admin (201, guarda {{sedeId}})",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "const cuerpo = pm.response.json();",
-              "pm.test('Responde 201', () => pm.response.to.have.status(201));",
-              "if (cuerpo.datos && cuerpo.datos.id) {",
-              "  pm.collectionVariables.set('sedeId', cuerpo.datos.id);",
-              "}"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"nombre\": \"Sede Test\",\n  \"direccion\": \"Calle Falsa 123\",\n  \"telefono\": \"3420000000\"\n}"
         },
-        "url": "{{baseUrl}}/sedes"
-      }
-    },
-    {
-      "name": "PUT /sedes/{{sedeId}} - admin (200)",
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
-            ]
+          "name": "GET /auth/perfil - token invalido (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Estado Token invalido', () => pm.expect(pm.response.json().estado).to.eql('Token inválido'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer token.invalido.aqui" }],
+            "url": "{{baseUrl}}/auth/perfil"
           }
-        }
-      ],
-      "request": {
-        "method": "PUT",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"nombre\": \"Sede Test Editada\",\n  \"direccion\": \"Calle Falsa 456\",\n  \"telefono\": \"3420000001\"\n}"
         },
-        "url": "{{baseUrl}}/sedes/{{sedeId}}"
-      }
-    },
-    {
-      "name": "DELETE /sedes/{{sedeId}} - admin, sin dependencias (200)",
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
-            ]
+          "name": "POST /auth/login - admin (guarda {{tokenAdmin}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "if (cuerpo.datos && cuerpo.datos.token) {",
+                  "  pm.collectionVariables.set('tokenAdmin', cuerpo.datos.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
           }
-        }
-      ],
-      "request": {
-        "method": "DELETE",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
-        ],
-        "url": "{{baseUrl}}/sedes/{{sedeId}}"
-      }
-    },
-    {
-      "name": "DELETE /sedes/1 - admin, con dependencias (409)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 409', () => pm.response.to.have.status(409));"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "DELETE",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
-        ],
-        "url": "{{baseUrl}}/sedes/1"
-      }
-    },
-    {
-      "name": "GET /especialidades - rol paciente (403)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 403', () => pm.response.to.have.status(403));"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" }
-        ],
-        "url": "{{baseUrl}}/especialidades"
-      }
-    },
-    {
-      "name": "GET /especialidades - admin (200)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
-        ],
-        "url": "{{baseUrl}}/especialidades"
-      }
-    },
-    {
-      "name": "POST /especialidades - admin (201, guarda {{especialidadId}})",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "const cuerpo = pm.response.json();",
-              "pm.test('Responde 201', () => pm.response.to.have.status(201));",
-              "if (cuerpo.datos && cuerpo.datos.id) {",
-              "  pm.collectionVariables.set('especialidadId', cuerpo.datos.id);",
-              "}"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"descripcion\": \"Especialidad Test\"\n}"
         },
-        "url": "{{baseUrl}}/especialidades"
-      }
-    },
-    {
-      "name": "PUT /especialidades/{{especialidadId}} - admin (200)",
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
-            ]
+          "name": "POST /auth/login - medico (guarda {{tokenMedico}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "if (cuerpo.datos && cuerpo.datos.token) {",
+                  "  pm.collectionVariables.set('tokenMedico', cuerpo.datos.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{medicoEmail}}\",\n  \"password\": \"{{medicoPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
           }
-        }
-      ],
-      "request": {
-        "method": "PUT",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"descripcion\": \"Especialidad Test Editada\"\n}"
         },
-        "url": "{{baseUrl}}/especialidades/{{especialidadId}}"
-      }
-    },
-    {
-      "name": "DELETE /especialidades/{{especialidadId}} - admin, sin dependencias (200)",
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
-            ]
+          "name": "POST /auth/login - operador (guarda {{tokenOperador}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "if (cuerpo.datos && cuerpo.datos.token) {",
+                  "  pm.collectionVariables.set('tokenOperador', cuerpo.datos.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{operadorEmail}}\",\n  \"password\": \"{{operadorPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
           }
         }
-      ],
-      "request": {
-        "method": "DELETE",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
-        ],
-        "url": "{{baseUrl}}/especialidades/{{especialidadId}}"
-      }
+      ]
     },
     {
-      "name": "DELETE /especialidades/1 - admin, con dependencias (409)",
-      "event": [
+      "name": "Sedes (solo admin)",
+      "description": "Requiere haber corrido antes 'POST /auth/login - admin' en la carpeta Autenticacion.",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Responde 409', () => pm.response.to.have.status(409));"
-            ]
+          "name": "GET /sedes - sin token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 401', () => pm.response.to.have.status(401));"] }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/sedes" }
+        },
+        {
+          "name": "GET /sedes - rol paciente (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 403', () => pm.response.to.have.status(403));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/sedes"
+          }
+        },
+        {
+          "name": "GET /sedes - admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Formato uniforme', () => {",
+                  "  const cuerpo = pm.response.json();",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": "{{baseUrl}}/sedes"
+          }
+        },
+        {
+          "name": "POST /sedes - admin (201, guarda {{sedeId}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (cuerpo.datos && cuerpo.datos.id) {",
+                  "  pm.collectionVariables.set('sedeId', cuerpo.datos.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sede Test\",\n  \"direccion\": \"Calle Falsa 123\",\n  \"telefono\": \"3420000000\"\n}"
+            },
+            "url": "{{baseUrl}}/sedes"
+          }
+        },
+        {
+          "name": "PUT /sedes/{{sedeId}} - admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sede Test Editada\",\n  \"direccion\": \"Calle Falsa 456\",\n  \"telefono\": \"3420000001\"\n}"
+            },
+            "url": "{{baseUrl}}/sedes/{{sedeId}}"
+          }
+        },
+        {
+          "name": "DELETE /sedes/{{sedeId}} - admin, sin dependencias (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": "{{baseUrl}}/sedes/{{sedeId}}"
+          }
+        },
+        {
+          "name": "DELETE /sedes/1 - admin, con dependencias (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 409', () => pm.response.to.have.status(409));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": "{{baseUrl}}/sedes/1"
           }
         }
-      ],
-      "request": {
-        "method": "DELETE",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
-        ],
-        "url": "{{baseUrl}}/especialidades/1"
-      }
+      ]
+    },
+    {
+      "name": "Especialidades (solo admin)",
+      "description": "Requiere haber corrido antes 'POST /auth/login - admin' en la carpeta Autenticacion.",
+      "item": [
+        {
+          "name": "GET /especialidades - rol paciente (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 403', () => pm.response.to.have.status(403));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/especialidades"
+          }
+        },
+        {
+          "name": "GET /especialidades - admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": "{{baseUrl}}/especialidades"
+          }
+        },
+        {
+          "name": "POST /especialidades - admin (201, guarda {{especialidadId}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (cuerpo.datos && cuerpo.datos.id) {",
+                  "  pm.collectionVariables.set('especialidadId', cuerpo.datos.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"descripcion\": \"Especialidad Test\"\n}" },
+            "url": "{{baseUrl}}/especialidades"
+          }
+        },
+        {
+          "name": "PUT /especialidades/{{especialidadId}} - admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"descripcion\": \"Especialidad Test Editada\"\n}" },
+            "url": "{{baseUrl}}/especialidades/{{especialidadId}}"
+          }
+        },
+        {
+          "name": "DELETE /especialidades/{{especialidadId}} - admin, sin dependencias (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": "{{baseUrl}}/especialidades/{{especialidadId}}"
+          }
+        },
+        {
+          "name": "DELETE /especialidades/1 - admin, con dependencias (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 409', () => pm.response.to.have.status(409));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": "{{baseUrl}}/especialidades/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Coberturas",
+      "description": "GET es publico (semana 1). POST/PUT/DELETE requieren 'POST /auth/login - admin' corrido antes.",
+      "item": [
+        {
+          "name": "GET /coberturas - publico (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/coberturas" }
+        },
+        {
+          "name": "POST /coberturas - rol paciente (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 403', () => pm.response.to.have.status(403));"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Cobertura Test\"\n}" },
+            "url": "{{baseUrl}}/coberturas"
+          }
+        },
+        {
+          "name": "POST /coberturas - admin (201, guarda {{coberturaId}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (cuerpo.datos && cuerpo.datos.id) {",
+                  "  pm.collectionVariables.set('coberturaId', cuerpo.datos.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Cobertura Test\"\n}" },
+            "url": "{{baseUrl}}/coberturas"
+          }
+        },
+        {
+          "name": "PUT /coberturas/{{coberturaId}} - admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Cobertura Test Editada\"\n}" },
+            "url": "{{baseUrl}}/coberturas/{{coberturaId}}"
+          }
+        },
+        {
+          "name": "DELETE /coberturas/{{coberturaId}} - admin, sin dependencias (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": "{{baseUrl}}/coberturas/{{coberturaId}}"
+          }
+        },
+        {
+          "name": "DELETE /coberturas/1 - admin, con dependencias (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 409', () => pm.response.to.have.status(409));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "url": "{{baseUrl}}/coberturas/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Agenda medica (medico/operador)",
+      "description": "Requiere haber corrido antes 'POST /auth/login - medico' y 'POST /auth/login - operador' en la carpeta Autenticacion. El medico solo puede gestionar su propia agenda (id_medico = {{medicoId}}); el operador puede gestionar la de cualquiera.",
+      "item": [
+        {
+          "name": "GET /agenda - rol paciente (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 403', () => pm.response.to.have.status(403));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/agenda"
+          }
+        },
+        {
+          "name": "POST /agenda - operador (201, guarda {{agendaId}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (cuerpo.datos && cuerpo.datos.id) {",
+                  "  pm.collectionVariables.set('agendaId', cuerpo.datos.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenOperador}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"13:00\",\n  \"fecha\": \"2026-09-01\",\n  \"id_medico\": {{medicoId}},\n  \"id_especialidad\": 1,\n  \"id_sede\": 1\n}"
+            },
+            "url": "{{baseUrl}}/agenda"
+          }
+        },
+        {
+          "name": "POST /agenda - medico intenta cargar agenda de otro medico (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 403', () => pm.response.to.have.status(403));"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenMedico}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"13:00\",\n  \"fecha\": \"2026-09-01\",\n  \"id_medico\": 99,\n  \"id_especialidad\": 1,\n  \"id_sede\": 1\n}"
+            },
+            "url": "{{baseUrl}}/agenda"
+          }
+        },
+        {
+          "name": "GET /agenda - filtrado por medico y fecha (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Formato uniforme', () => {",
+                  "  const cuerpo = pm.response.json();",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenOperador}}" }],
+            "url": "{{baseUrl}}/agenda?id_medico={{medicoId}}&fecha=2026-09-01"
+          }
+        },
+        {
+          "name": "PUT /agenda/{{agendaId}} - operador (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenOperador}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"10:00\",\n  \"hora_salida\": \"14:00\",\n  \"fecha\": \"2026-09-01\",\n  \"id_medico\": {{medicoId}},\n  \"id_especialidad\": 1,\n  \"id_sede\": 1\n}"
+            },
+            "url": "{{baseUrl}}/agenda/{{agendaId}}"
+          }
+        },
+        {
+          "name": "DELETE /agenda/{{agendaId}} - operador (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenOperador}}" }],
+            "url": "{{baseUrl}}/agenda/{{agendaId}}"
+          }
+        }
+      ]
     }
   ]
 }

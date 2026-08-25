@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Clinica-Backend - Semana 1 y 2",
-    "description": "Coleccion organizada en carpetas por recurso. Antes de correr nada:\n\n1. Importar tambien el archivo 'Clinica-Backend.postman_environment.json' y seleccionarlo como Environment activo (arriba a la derecha en Postman). Ahi estan las credenciales de cada usuario de prueba (paciente, admin, medico, operador), separadas de la coleccion para que sea mas facil de leer.\n2. Con la base ya cargada (ScriptSQL.sql), correr una vez 'npm run seed:usuarios' en el backend: les setea password real a los usuarios admin/medico/operador del seed (sus hashes originales son placeholders y no sirven para loguear). Las passwords que deja ese script son las mismas que ya estan en el Environment.\n3. Levantar el backend con 'npm run dev'.\n\nOrden sugerido para correr las carpetas: Salud -> Autenticacion -> Sedes -> Especialidades -> Coberturas -> Agenda. Los folders de Sedes/Especialidades/Coberturas necesitan haber corrido antes 'POST /auth/login - admin' (dentro de Autenticacion). El folder de Agenda necesita 'POST /auth/login - medico' y 'POST /auth/login - operador'.",
+    "name": "Clinica-Backend - Semanas 1 a 3",
+    "description": "Coleccion organizada en carpetas por recurso. Antes de correr nada:\n\n1. Importar tambien el archivo 'Clinica-Backend.postman_environment.json' y seleccionarlo como Environment activo (arriba a la derecha en Postman). Ahi estan las credenciales de cada usuario de prueba (paciente, admin, medico, operador), separadas de la coleccion para que sea mas facil de leer.\n2. Con la base ya cargada (ScriptSQL.sql), correr una vez 'npm run seed:usuarios' en el backend: les setea password real a los usuarios admin/medico/operador del seed (sus hashes originales son placeholders y no sirven para loguear). Las passwords que deja ese script son las mismas que ya estan en el Environment.\n3. Levantar el backend con 'npm run dev'.\n\nOrden sugerido para correr las carpetas: Salud -> Autenticacion -> Sedes -> Especialidades -> Coberturas -> Agenda -> Turnos. Los folders de Sedes/Especialidades/Coberturas necesitan haber corrido antes 'POST /auth/login - admin' (dentro de Autenticacion). El folder de Agenda necesita 'POST /auth/login - medico' y 'POST /auth/login - operador'. El folder de Turnos necesita ademas 'GET /auth/perfil - con token', que es de donde sale {{pacienteId}}.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -12,7 +12,12 @@
     { "key": "sedeId", "value": "" },
     { "key": "especialidadId", "value": "" },
     { "key": "coberturaId", "value": "" },
-    { "key": "agendaId", "value": "" }
+    { "key": "agendaId", "value": "" },
+    { "key": "agendaTurnoId", "value": "" },
+    { "key": "turnoId", "value": "" },
+    { "key": "turnoOperadorId", "value": "" },
+    { "key": "turnoAtenderId", "value": "" },
+    { "key": "pacienteId", "value": "" }
   ],
   "item": [
     {
@@ -202,7 +207,11 @@
                   "pm.test('Trae los datos del usuario logueado', () => {",
                   "  pm.expect(cuerpo.datos).to.include.keys('id', 'nombre', 'apellido', 'email', 'rol', 'id_sede');",
                   "});",
-                  "pm.test('Nunca expone la password', () => pm.expect(cuerpo.datos).to.not.have.property('password'));"
+                  "pm.test('Nunca expone la password', () => pm.expect(cuerpo.datos).to.not.have.property('password'));",
+                "",
+                "if (cuerpo.datos && cuerpo.datos.id) {",
+                "  pm.collectionVariables.set('pacienteId', cuerpo.datos.id);",
+                "}"
                 ]
               }
             }
@@ -806,6 +815,629 @@
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{tokenOperador}}" }],
             "url": "{{baseUrl}}/agenda/{{agendaId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Turnos (paciente/operador/medico)",
+      "description": "Ciclo de vida del turno: alta, cancelacion y atencion. Requiere haber corrido antes 'POST /auth/login' de paciente, operador y medico, y 'GET /auth/perfil - con token' (de ahi sale {{pacienteId}}, que el operador necesita para cargar un turno en representacion). Crea su propia agenda porque el folder Agenda borra la suya al terminar. Los requests comparten variables, asi que hay que correrlos en orden.",
+      "item": [
+        {
+          "name": "POST /agenda - operador, agenda base para turnos (201, guarda {{agendaTurnoId}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (cuerpo.datos && cuerpo.datos.id) {",
+                  "  pm.collectionVariables.set('agendaTurnoId', cuerpo.datos.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenOperador}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"13:00\",\n  \"fecha\": \"2026-09-02\",\n  \"id_medico\": {{medicoId}},\n  \"id_especialidad\": 1,\n  \"id_sede\": 1\n}"
+            },
+            "url": "{{baseUrl}}/agenda"
+          }
+        },
+        {
+          "name": "POST /turnos - rol admin (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(403);",
+                  "  pm.expect(cuerpo.datos).to.eql(null);",
+                  "});",
+                  "pm.test('Explica el motivo', () => pm.expect(cuerpo.estado).to.include(\"No tiene permisos\"));",
+                  "pm.test('No es un error 500', () => pm.expect(cuerpo.codigo).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especialidad\": 1,\n  \"id_sede\": 1,\n  \"id_medico\": {{medicoId}},\n  \"fecha\": \"2026-09-02\",\n  \"hora\": \"09:30\",\n  \"nota\": \"Control anual\"\n}"
+            },
+            "url": "{{baseUrl}}/turnos"
+          }
+        },
+        {
+          "name": "POST /turnos - falta la nota (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(400);",
+                  "  pm.expect(cuerpo.datos).to.eql(null);",
+                  "});",
+                  "pm.test('Explica el motivo', () => pm.expect(cuerpo.estado).to.include(\"Faltan campos requeridos: nota\"));",
+                  "pm.test('No es un error 500', () => pm.expect(cuerpo.codigo).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especialidad\": 1,\n  \"id_sede\": 1,\n  \"id_medico\": {{medicoId}},\n  \"fecha\": \"2026-09-02\",\n  \"hora\": \"09:30\"\n}"
+            },
+            "url": "{{baseUrl}}/turnos"
+          }
+        },
+        {
+          "name": "POST /turnos - fecha con formato invalido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(400);",
+                  "  pm.expect(cuerpo.datos).to.eql(null);",
+                  "});",
+                  "pm.test('Explica el motivo', () => pm.expect(cuerpo.estado).to.include(\"formato AAAA-MM-DD\"));",
+                  "pm.test('No es un error 500', () => pm.expect(cuerpo.codigo).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especialidad\": 1,\n  \"id_sede\": 1,\n  \"id_medico\": {{medicoId}},\n  \"fecha\": \"02/09/2026\",\n  \"hora\": \"09:30\",\n  \"nota\": \"Control anual\"\n}"
+            },
+            "url": "{{baseUrl}}/turnos"
+          }
+        },
+        {
+          "name": "POST /turnos - paciente, horario fuera de la agenda (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// CASO PEDIDO POR LA CATEDRA: turno rechazado por horario no disponible.",
+                  "// La agenda del medico va de 09:00 a 13:00 y se pide un turno a las 14:00.",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(400);",
+                  "  pm.expect(cuerpo.datos).to.eql(null);",
+                  "});",
+                  "pm.test('Explica el motivo', () => pm.expect(cuerpo.estado).to.include(\"fuera del horario de atención\"));",
+                  "pm.test('No es un error 500', () => pm.expect(cuerpo.codigo).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especialidad\": 1,\n  \"id_sede\": 1,\n  \"id_medico\": {{medicoId}},\n  \"fecha\": \"2026-09-02\",\n  \"hora\": \"14:00\",\n  \"nota\": \"Fuera del horario de atencion\"\n}"
+            },
+            "url": "{{baseUrl}}/turnos"
+          }
+        },
+        {
+          "name": "POST /turnos - paciente, sin agenda para esa fecha (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(400);",
+                  "  pm.expect(cuerpo.datos).to.eql(null);",
+                  "});",
+                  "pm.test('Explica el motivo', () => pm.expect(cuerpo.estado).to.include(\"No hay agenda del médico\"));",
+                  "pm.test('No es un error 500', () => pm.expect(cuerpo.codigo).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especialidad\": 1,\n  \"id_sede\": 1,\n  \"id_medico\": {{medicoId}},\n  \"fecha\": \"2026-09-03\",\n  \"hora\": \"09:30\",\n  \"nota\": \"Control anual\"\n}"
+            },
+            "url": "{{baseUrl}}/turnos"
+          }
+        },
+        {
+          "name": "POST /turnos - paciente, exito (201, guarda {{turnoId}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('El turno se crea confirmado', () => pm.expect(cuerpo.datos.turno.estado).to.eql('confirmado'));",
+                  "pm.test('La fecha vuelve como AAAA-MM-DD', () => pm.expect(cuerpo.datos.turno.fecha).to.eql('2026-09-02'));",
+                  "pm.test('Genera la notificacion de confirmacion para el paciente', () => {",
+                  "  const notificacion = cuerpo.datos.notificaciones[0];",
+                  "  pm.expect(notificacion.tipo).to.eql('turno_confirmado');",
+                  "  pm.expect(notificacion.id_usuario).to.eql(cuerpo.datos.turno.id_paciente);",
+                  "  pm.expect(notificacion.leida).to.eql(0);",
+                  "  pm.expect(notificacion.mensaje).to.include(cuerpo.datos.turno.hora);",
+                  "});",
+                  "if (cuerpo.datos && cuerpo.datos.turno) {",
+                  "  pm.collectionVariables.set('turnoId', cuerpo.datos.turno.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especialidad\": 1,\n  \"id_sede\": 1,\n  \"id_medico\": {{medicoId}},\n  \"fecha\": \"2026-09-02\",\n  \"hora\": \"09:30\",\n  \"nota\": \"Control anual\"\n}"
+            },
+            "url": "{{baseUrl}}/turnos"
+          }
+        },
+        {
+          "name": "POST /turnos - paciente, horario ya ocupado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// CASO PEDIDO POR LA CATEDRA: el horario 09:30 lo tomo el request anterior.",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(409);",
+                  "  pm.expect(cuerpo.datos).to.eql(null);",
+                  "});",
+                  "pm.test('Explica el motivo', () => pm.expect(cuerpo.estado).to.include(\"ya está ocupado\"));",
+                  "pm.test('No es un error 500', () => pm.expect(cuerpo.codigo).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especialidad\": 1,\n  \"id_sede\": 1,\n  \"id_medico\": {{medicoId}},\n  \"fecha\": \"2026-09-02\",\n  \"hora\": \"09:30\",\n  \"nota\": \"Mismo horario que el anterior\"\n}"
+            },
+            "url": "{{baseUrl}}/turnos"
+          }
+        },
+        {
+          "name": "POST /turnos - operador en representacion (201, guarda {{turnoOperadorId}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('El turno queda a nombre del paciente indicado', () =>",
+                  "  pm.expect(Number(cuerpo.datos.turno.id_paciente)).to.eql(Number(pm.collectionVariables.get('pacienteId'))));",
+                  "// El body manda id_cobertura: 99 a proposito: la cobertura se toma de la",
+                  "// ficha del paciente y no puede pisarse desde el endpoint.",
+                  "pm.test('Ignora el id_cobertura del body', () => pm.expect(cuerpo.datos.turno.id_cobertura).to.not.eql(99));",
+                  "if (cuerpo.datos && cuerpo.datos.turno) {",
+                  "  pm.collectionVariables.set('turnoOperadorId', cuerpo.datos.turno.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenOperador}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especialidad\": 1,\n  \"id_sede\": 1,\n  \"id_medico\": {{medicoId}},\n  \"fecha\": \"2026-09-02\",\n  \"hora\": \"10:00\",\n  \"nota\": \"Turno cargado por el operador\",\n  \"id_paciente\": {{pacienteId}},\n  \"id_cobertura\": 99\n}"
+            },
+            "url": "{{baseUrl}}/turnos"
+          }
+        },
+        {
+          "name": "POST /turnos - operador, sede ajena (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(403);",
+                  "  pm.expect(cuerpo.datos).to.eql(null);",
+                  "});",
+                  "pm.test('Explica el motivo', () => pm.expect(cuerpo.estado).to.include(\"su propia sede\"));",
+                  "pm.test('No es un error 500', () => pm.expect(cuerpo.codigo).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenOperador}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especialidad\": 1,\n  \"id_sede\": 2,\n  \"id_medico\": {{medicoId}},\n  \"fecha\": \"2026-09-02\",\n  \"hora\": \"11:00\",\n  \"nota\": \"Control anual\",\n  \"id_paciente\": {{pacienteId}}\n}"
+            },
+            "url": "{{baseUrl}}/turnos"
+          }
+        },
+        {
+          "name": "PATCH /turnos/2/cancelar - paciente ajeno (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// El turno 2 viene del seed y es de otro paciente.",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(403);",
+                  "  pm.expect(cuerpo.datos).to.eql(null);",
+                  "});",
+                  "pm.test('Explica el motivo', () => pm.expect(cuerpo.estado).to.include(\"sus propios turnos\"));",
+                  "pm.test('No es un error 500', () => pm.expect(cuerpo.codigo).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/turnos/2/cancelar"
+          }
+        },
+        {
+          "name": "PATCH /turnos/{{turnoId}}/cancelar - paciente propio (200, genera notificacion)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// CASO PEDIDO POR LA CATEDRA: turno cancelado que genera notificacion.",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El turno queda cancelado', () => pm.expect(cuerpo.datos.turno.estado).to.eql('cancelado'));",
+                  "pm.test('Genera notificacion para el paciente', () => {",
+                  "  const notificacion = cuerpo.datos.notificaciones.find((n) => n.id_usuario === cuerpo.datos.turno.id_paciente);",
+                  "  pm.expect(notificacion.tipo).to.eql('turno_cancelado');",
+                  "  pm.expect(notificacion.leida).to.eql(0);",
+                  "  pm.expect(notificacion.mensaje).to.include(cuerpo.datos.turno.hora);",
+                  "});",
+                  "pm.test('Notifica tambien al medico de la agenda', () => {",
+                  "  const notificacion = cuerpo.datos.notificaciones.find((n) => n.id_usuario === cuerpo.datos.turno.id_medico);",
+                  "  pm.expect(notificacion.tipo).to.eql('turno_cancelado');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/turnos/{{turnoId}}/cancelar"
+          }
+        },
+        {
+          "name": "PATCH /turnos/{{turnoId}}/cancelar - ya cancelado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(409);",
+                  "  pm.expect(cuerpo.datos).to.eql(null);",
+                  "});",
+                  "pm.test('Explica el motivo', () => pm.expect(cuerpo.estado).to.include(\"ya se encuentra cancelado\"));",
+                  "pm.test('No es un error 500', () => pm.expect(cuerpo.codigo).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/turnos/{{turnoId}}/cancelar"
+          }
+        },
+        {
+          "name": "POST /turnos - paciente, reagenda el horario liberado (201, guarda {{turnoAtenderId}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Cancelar libera el horario: solo ocupa el estado confirmado.",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Vuelve a tomar el horario liberado', () => pm.expect(cuerpo.datos.turno.hora).to.eql('09:30'));",
+                  "if (cuerpo.datos && cuerpo.datos.turno) {",
+                  "  pm.collectionVariables.set('turnoAtenderId', cuerpo.datos.turno.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especialidad\": 1,\n  \"id_sede\": 1,\n  \"id_medico\": {{medicoId}},\n  \"fecha\": \"2026-09-02\",\n  \"hora\": \"09:30\",\n  \"nota\": \"Reagendado tras la cancelacion\"\n}"
+            },
+            "url": "{{baseUrl}}/turnos"
+          }
+        },
+        {
+          "name": "PATCH /turnos/{{turnoAtenderId}}/atender - operador (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(403);",
+                  "  pm.expect(cuerpo.datos).to.eql(null);",
+                  "});",
+                  "pm.test('Explica el motivo', () => pm.expect(cuerpo.estado).to.include(\"No tiene permisos\"));",
+                  "pm.test('No es un error 500', () => pm.expect(cuerpo.codigo).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenOperador}}" }],
+            "url": "{{baseUrl}}/turnos/{{turnoAtenderId}}/atender"
+          }
+        },
+        {
+          "name": "PATCH /turnos/{{turnoAtenderId}}/atender - medico con historial (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// CASO PEDIDO POR LA CATEDRA: turno atendido con su historial asociado.",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El turno queda atendido', () => pm.expect(cuerpo.datos.turno.estado).to.eql('atendido'));",
+                  "pm.test('El historial queda asociado al turno', () => {",
+                  "  pm.expect(cuerpo.datos.historial).to.not.eql(null);",
+                  "  pm.expect(cuerpo.datos.historial.id_turno).to.eql(cuerpo.datos.turno.id);",
+                  "  pm.expect(cuerpo.datos.historial.diagnostico).to.eql('Esguince de tobillo grado I');",
+                  "  pm.expect(cuerpo.datos.historial.id_paciente).to.eql(cuerpo.datos.turno.id_paciente);",
+                  "});",
+                  "pm.test('Notifica al paciente', () => {",
+                  "  const notificacion = cuerpo.datos.notificaciones[0];",
+                  "  pm.expect(notificacion.tipo).to.eql('turno_atendido');",
+                  "  pm.expect(notificacion.id_usuario).to.eql(cuerpo.datos.turno.id_paciente);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenMedico}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diagnostico\": \"Esguince de tobillo grado I\",\n  \"tratamiento\": \"Reposo y antiinflamatorios\",\n  \"observaciones\": \"Control en 15 dias\"\n}"
+            },
+            "url": "{{baseUrl}}/turnos/{{turnoAtenderId}}/atender"
+          }
+        },
+        {
+          "name": "PATCH /turnos/{{turnoAtenderId}}/atender - ya atendido (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(409);",
+                  "  pm.expect(cuerpo.datos).to.eql(null);",
+                  "});",
+                  "pm.test('Explica el motivo', () => pm.expect(cuerpo.estado).to.include(\"ya se encuentra atendido\"));",
+                  "pm.test('No es un error 500', () => pm.expect(cuerpo.codigo).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenMedico}}" }],
+            "url": "{{baseUrl}}/turnos/{{turnoAtenderId}}/atender"
+          }
+        },
+        {
+          "name": "PATCH /turnos/{{turnoAtenderId}}/cancelar - turno ya atendido (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () => {",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos');",
+                  "  pm.expect(cuerpo.codigo).to.eql(409);",
+                  "  pm.expect(cuerpo.datos).to.eql(null);",
+                  "});",
+                  "pm.test('Explica el motivo', () => pm.expect(cuerpo.estado).to.include(\"ya fue atendido\"));",
+                  "pm.test('No es un error 500', () => pm.expect(cuerpo.codigo).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenOperador}}" }],
+            "url": "{{baseUrl}}/turnos/{{turnoAtenderId}}/cancelar"
+          }
+        },
+        {
+          "name": "PATCH /turnos/{{turnoOperadorId}}/atender - sin diagnostico (200, historial null)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// La carga del historial es opcional: sin diagnostico queda para despues.",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El turno queda atendido', () => pm.expect(cuerpo.datos.turno.estado).to.eql('atendido'));",
+                  "pm.test('No se crea historial', () => pm.expect(cuerpo.datos.historial).to.eql(null));",
+                  "pm.test('Igual notifica al paciente', () =>",
+                  "  pm.expect(cuerpo.datos.notificaciones[0].tipo).to.eql('turno_atendido'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenMedico}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": "{{baseUrl}}/turnos/{{turnoOperadorId}}/atender"
           }
         }
       ]

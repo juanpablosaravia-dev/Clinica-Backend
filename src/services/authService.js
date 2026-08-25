@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import pool from '../database/conexion.js';
 import { firmarToken } from '../utils/token.js';
 import { ErrorHttp } from '../utils/errorHttp.js';
+import { validarCamposRequeridos } from '../utils/validaciones.js';
 
 const ER_DUP_ENTRY = 1062;
 
@@ -16,21 +17,6 @@ const CAMPOS_REQUERIDOS_REGISTRO = [
 ];
 
 const CAMPOS_REQUERIDOS_LOGIN = ['email', 'password'];
-
-function buscarCamposFaltantes(cuerpo, camposRequeridos) {
-  const datos = cuerpo ?? {};
-  return camposRequeridos.filter((campo) => {
-    const valor = datos[campo];
-    return valor === undefined || valor === null || valor === '';
-  });
-}
-
-function validarCamposRequeridos(cuerpo, camposRequeridos) {
-  const camposFaltantes = buscarCamposFaltantes(cuerpo, camposRequeridos);
-  if (camposFaltantes.length > 0) {
-    throw new ErrorHttp(400, `Faltan campos requeridos: ${camposFaltantes.join(', ')}`);
-  }
-}
 
 export async function registrarPaciente(datos) {
   validarCamposRequeridos(datos, CAMPOS_REQUERIDOS_REGISTRO);

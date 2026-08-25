@@ -1,22 +1,8 @@
 import pool from '../database/conexion.js';
 import { ErrorHttp } from '../utils/errorHttp.js';
+import { validarCamposRequeridos } from '../utils/validaciones.js';
 
 const CAMPOS_REQUERIDOS = ['descripcion'];
-
-function buscarCamposFaltantes(cuerpo, camposRequeridos) {
-  const datos = cuerpo ?? {};
-  return camposRequeridos.filter((campo) => {
-    const valor = datos[campo];
-    return valor === undefined || valor === null || valor === '';
-  });
-}
-
-function validarCamposRequeridos(cuerpo) {
-  const camposFaltantes = buscarCamposFaltantes(cuerpo, CAMPOS_REQUERIDOS);
-  if (camposFaltantes.length > 0) {
-    throw new ErrorHttp(400, `Faltan campos requeridos: ${camposFaltantes.join(', ')}`);
-  }
-}
 
 async function buscarEspecialidadPorId(id) {
   const [especialidades] = await pool.query(
@@ -35,7 +21,7 @@ export async function listarEspecialidades() {
 }
 
 export async function crearEspecialidad(datos) {
-  validarCamposRequeridos(datos);
+  validarCamposRequeridos(datos, CAMPOS_REQUERIDOS);
   const { descripcion } = datos;
 
   const [resultado] = await pool.query('INSERT INTO especialidad (descripcion) VALUES (?)', [
@@ -46,7 +32,7 @@ export async function crearEspecialidad(datos) {
 }
 
 export async function actualizarEspecialidad(id, datos) {
-  validarCamposRequeridos(datos);
+  validarCamposRequeridos(datos, CAMPOS_REQUERIDOS);
   await buscarEspecialidadPorId(id);
   const { descripcion } = datos;
 

@@ -1,22 +1,8 @@
 import pool from '../database/conexion.js';
 import { ErrorHttp } from '../utils/errorHttp.js';
+import { validarCamposRequeridos } from '../utils/validaciones.js';
 
 const CAMPOS_REQUERIDOS = ['hora_entrada', 'hora_salida', 'fecha', 'id_medico', 'id_especialidad', 'id_sede'];
-
-function buscarCamposFaltantes(cuerpo, camposRequeridos) {
-  const datos = cuerpo ?? {};
-  return camposRequeridos.filter((campo) => {
-    const valor = datos[campo];
-    return valor === undefined || valor === null || valor === '';
-  });
-}
-
-function validarCamposRequeridos(cuerpo) {
-  const camposFaltantes = buscarCamposFaltantes(cuerpo, CAMPOS_REQUERIDOS);
-  if (camposFaltantes.length > 0) {
-    throw new ErrorHttp(400, `Faltan campos requeridos: ${camposFaltantes.join(', ')}`);
-  }
-}
 
 // El rol medico solo puede gestionar su propia agenda; el operador puede
 // gestionar la de cualquier medico y sede.
@@ -64,7 +50,7 @@ export async function listarAgenda(filtros, usuario) {
 }
 
 export async function crearAgenda(datos, usuario) {
-  validarCamposRequeridos(datos);
+  validarCamposRequeridos(datos, CAMPOS_REQUERIDOS);
   const { hora_entrada, hora_salida, fecha, id_medico, id_especialidad, id_sede } = datos;
   validarPropiedadAgenda(usuario, id_medico);
 
@@ -77,7 +63,7 @@ export async function crearAgenda(datos, usuario) {
 }
 
 export async function actualizarAgenda(id, datos, usuario) {
-  validarCamposRequeridos(datos);
+  validarCamposRequeridos(datos, CAMPOS_REQUERIDOS);
   const agenda = await buscarAgendaPorId(id);
   validarPropiedadAgenda(usuario, agenda.id_medico);
   const { hora_entrada, hora_salida, fecha, id_medico, id_especialidad, id_sede } = datos;

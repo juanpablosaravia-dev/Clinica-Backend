@@ -1,22 +1,8 @@
 import pool from '../database/conexion.js';
 import { ErrorHttp } from '../utils/errorHttp.js';
+import { validarCamposRequeridos } from '../utils/validaciones.js';
 
 const CAMPOS_REQUERIDOS = ['nombre', 'direccion', 'telefono'];
-
-function buscarCamposFaltantes(cuerpo, camposRequeridos) {
-  const datos = cuerpo ?? {};
-  return camposRequeridos.filter((campo) => {
-    const valor = datos[campo];
-    return valor === undefined || valor === null || valor === '';
-  });
-}
-
-function validarCamposRequeridos(cuerpo) {
-  const camposFaltantes = buscarCamposFaltantes(cuerpo, CAMPOS_REQUERIDOS);
-  if (camposFaltantes.length > 0) {
-    throw new ErrorHttp(400, `Faltan campos requeridos: ${camposFaltantes.join(', ')}`);
-  }
-}
 
 async function buscarSedePorId(id) {
   const [sedes] = await pool.query(
@@ -35,7 +21,7 @@ export async function listarSedes() {
 }
 
 export async function crearSede(datos) {
-  validarCamposRequeridos(datos);
+  validarCamposRequeridos(datos, CAMPOS_REQUERIDOS);
   const { nombre, direccion, telefono } = datos;
 
   const [resultado] = await pool.query(
@@ -47,7 +33,7 @@ export async function crearSede(datos) {
 }
 
 export async function actualizarSede(id, datos) {
-  validarCamposRequeridos(datos);
+  validarCamposRequeridos(datos, CAMPOS_REQUERIDOS);
   await buscarSedePorId(id);
   const { nombre, direccion, telefono } = datos;
 

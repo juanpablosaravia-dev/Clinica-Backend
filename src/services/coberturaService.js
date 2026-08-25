@@ -1,22 +1,8 @@
 import pool from '../database/conexion.js';
 import { ErrorHttp } from '../utils/errorHttp.js';
+import { validarCamposRequeridos } from '../utils/validaciones.js';
 
 const CAMPOS_REQUERIDOS = ['nombre'];
-
-function buscarCamposFaltantes(cuerpo, camposRequeridos) {
-  const datos = cuerpo ?? {};
-  return camposRequeridos.filter((campo) => {
-    const valor = datos[campo];
-    return valor === undefined || valor === null || valor === '';
-  });
-}
-
-function validarCamposRequeridos(cuerpo) {
-  const camposFaltantes = buscarCamposFaltantes(cuerpo, CAMPOS_REQUERIDOS);
-  if (camposFaltantes.length > 0) {
-    throw new ErrorHttp(400, `Faltan campos requeridos: ${camposFaltantes.join(', ')}`);
-  }
-}
 
 async function buscarCoberturaPorId(id) {
   const [coberturas] = await pool.query('SELECT id, nombre FROM cobertura WHERE id = ?', [id]);
@@ -32,7 +18,7 @@ export async function listarCoberturas() {
 }
 
 export async function crearCobertura(datos) {
-  validarCamposRequeridos(datos);
+  validarCamposRequeridos(datos, CAMPOS_REQUERIDOS);
   const { nombre } = datos;
 
   const [resultado] = await pool.query('INSERT INTO cobertura (nombre) VALUES (?)', [nombre]);
@@ -41,7 +27,7 @@ export async function crearCobertura(datos) {
 }
 
 export async function actualizarCobertura(id, datos) {
-  validarCamposRequeridos(datos);
+  validarCamposRequeridos(datos, CAMPOS_REQUERIDOS);
   await buscarCoberturaPorId(id);
   const { nombre } = datos;
 

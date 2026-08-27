@@ -1,23 +1,66 @@
 {
   "info": {
     "name": "Clinica-Backend - Semanas 1 a 3",
-    "description": "Coleccion organizada en carpetas por recurso. Antes de correr nada:\n\n1. Importar tambien el archivo 'Clinica-Backend.postman_environment.json' y seleccionarlo como Environment activo (arriba a la derecha en Postman). Ahi estan las credenciales de cada usuario de prueba (paciente, admin, medico, operador), separadas de la coleccion para que sea mas facil de leer.\n2. Con la base ya cargada (ScriptSQL.sql), correr una vez 'npm run seed:usuarios' en el backend: les setea password real a los usuarios admin/medico/operador del seed (sus hashes originales son placeholders y no sirven para loguear). Las passwords que deja ese script son las mismas que ya estan en el Environment.\n3. Levantar el backend con 'npm run dev'.\n\nOrden sugerido para correr las carpetas: Salud -> Autenticacion -> Sedes -> Especialidades -> Coberturas -> Agenda -> Turnos. Los folders de Sedes/Especialidades/Coberturas necesitan haber corrido antes 'POST /auth/login - admin' (dentro de Autenticacion). El folder de Agenda necesita 'POST /auth/login - medico' y 'POST /auth/login - operador'. El folder de Turnos necesita ademas 'GET /auth/perfil - con token', que es de donde sale {{pacienteId}}.",
+    "description": "Coleccion organizada en carpetas por recurso. Antes de correr nada:\n\n1. Importar tambien el archivo 'Clinica-Backend.postman_environment.json' y seleccionarlo como Environment activo (arriba a la derecha en Postman). Ahi estan las credenciales de cada usuario de prueba (paciente, admin, medico, operador), separadas de la coleccion para que sea mas facil de leer.\n2. Con la base ya cargada (ScriptSQL.sql), correr una vez 'npm run seed:usuarios' en el backend: les setea password real a los usuarios admin/medico/operador del seed (sus hashes originales son placeholders y no sirven para loguear). Las passwords que deja ese script son las mismas que ya estan en el Environment.\n3. Levantar el backend con 'npm run dev'.\n\nOrden sugerido para correr las carpetas: Salud -> Autenticacion -> Sedes -> Especialidades -> Coberturas -> Agenda -> Turnos -> Historial clinico -> Notificaciones. Los folders de Sedes/Especialidades/Coberturas necesitan haber corrido antes 'POST /auth/login - admin' (dentro de Autenticacion). El folder de Agenda necesita 'POST /auth/login - medico' y 'POST /auth/login - operador'. El folder de Turnos necesita ademas 'GET /auth/perfil - con token', que es de donde sale {{pacienteId}}.\n\nEl folder de Historial clinico necesita que ya corrio Turnos completo (usa esos mismos turnos). El folder de Notificaciones necesita Autenticacion y Turnos (las notificaciones se generan solas al confirmar/cancelar/atender un turno, no hay endpoint de alta).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "token", "value": "" },
-    { "key": "tokenAdmin", "value": "" },
-    { "key": "tokenMedico", "value": "" },
-    { "key": "tokenOperador", "value": "" },
-    { "key": "sedeId", "value": "" },
-    { "key": "especialidadId", "value": "" },
-    { "key": "coberturaId", "value": "" },
-    { "key": "agendaId", "value": "" },
-    { "key": "agendaTurnoId", "value": "" },
-    { "key": "turnoId", "value": "" },
-    { "key": "turnoOperadorId", "value": "" },
-    { "key": "turnoAtenderId", "value": "" },
-    { "key": "pacienteId", "value": "" }
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "tokenAdmin",
+      "value": ""
+    },
+    {
+      "key": "tokenMedico",
+      "value": ""
+    },
+    {
+      "key": "tokenOperador",
+      "value": ""
+    },
+    {
+      "key": "sedeId",
+      "value": ""
+    },
+    {
+      "key": "especialidadId",
+      "value": ""
+    },
+    {
+      "key": "coberturaId",
+      "value": ""
+    },
+    {
+      "key": "agendaId",
+      "value": ""
+    },
+    {
+      "key": "agendaTurnoId",
+      "value": ""
+    },
+    {
+      "key": "turnoId",
+      "value": ""
+    },
+    {
+      "key": "turnoOperadorId",
+      "value": ""
+    },
+    {
+      "key": "turnoAtenderId",
+      "value": ""
+    },
+    {
+      "key": "pacienteId",
+      "value": ""
+    },
+    {
+      "key": "notificacionId",
+      "value": ""
+    }
   ],
   "item": [
     {
@@ -40,7 +83,12 @@
           "name": "POST /auth/registro - exito (paciente)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"{{pacienteNombre}}\",\n  \"apellido\": \"{{pacienteApellido}}\",\n  \"dni\": \"{{pacienteDni}}\",\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
@@ -55,13 +103,20 @@
               "listen": "test",
               "script": {
                 "type": "text/javascript",
-                "exec": ["pm.test('Responde 400', () => pm.response.to.have.status(400));"]
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
               }
             }
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"{{pacienteNombre}}\",\n  \"apellido\": \"{{pacienteApellido}}\",\n  \"dni\": \"{{pacienteDni}}\",\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
@@ -76,13 +131,20 @@
               "listen": "test",
               "script": {
                 "type": "text/javascript",
-                "exec": ["pm.test('Responde 400', () => pm.response.to.have.status(400));"]
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
               }
             }
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"{{pacienteNombre}}\",\n  \"apellido\": \"{{pacienteApellido}}\",\n  \"dni\": \"{{pacienteDniSinEmail}}\",\n  \"password\": \"{{pacientePassword}}\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"id_cobertura\": 1\n}"
@@ -117,7 +179,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
@@ -141,7 +208,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"passwordIncorrecta\"\n}"
@@ -165,7 +237,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"noexiste@example.com\",\n  \"password\": \"{{pacientePassword}}\"\n}"
@@ -180,13 +257,20 @@
               "listen": "test",
               "script": {
                 "type": "text/javascript",
-                "exec": ["pm.test('Responde 400', () => pm.response.to.have.status(400));"]
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
               }
             }
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{pacienteEmail}}\"\n}"
@@ -208,17 +292,22 @@
                   "  pm.expect(cuerpo.datos).to.include.keys('id', 'nombre', 'apellido', 'email', 'rol', 'id_sede');",
                   "});",
                   "pm.test('Nunca expone la password', () => pm.expect(cuerpo.datos).to.not.have.property('password'));",
-                "",
-                "if (cuerpo.datos && cuerpo.datos.id) {",
-                "  pm.collectionVariables.set('pacienteId', cuerpo.datos.id);",
-                "}"
+                  "",
+                  "if (cuerpo.datos && cuerpo.datos.id) {",
+                  "  pm.collectionVariables.set('pacienteId', cuerpo.datos.id);",
+                  "}"
                 ]
               }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": "{{baseUrl}}/auth/perfil"
           }
         },
@@ -257,7 +346,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer token.invalido.aqui" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer token.invalido.aqui"
+              }
+            ],
             "url": "{{baseUrl}}/auth/perfil"
           }
         },
@@ -280,7 +374,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
@@ -307,7 +406,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{medicoEmail}}\",\n  \"password\": \"{{medicoPassword}}\"\n}"
@@ -334,7 +438,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{operadorEmail}}\",\n  \"password\": \"{{operadorPassword}}\"\n}"
@@ -353,22 +462,40 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 401', () => pm.response.to.have.status(401));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
             }
           ],
-          "request": { "method": "GET", "url": "{{baseUrl}}/sedes" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/sedes"
+          }
         },
         {
           "name": "GET /sedes - rol paciente (403)",
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 403', () => pm.response.to.have.status(403));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": "{{baseUrl}}/sedes"
           }
         },
@@ -391,7 +518,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
             "url": "{{baseUrl}}/sedes"
           }
         },
@@ -415,8 +547,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -430,14 +568,25 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -451,12 +600,22 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
             "url": "{{baseUrl}}/sedes/{{sedeId}}"
           }
         },
@@ -465,12 +624,22 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 409', () => pm.response.to.have.status(409));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
             "url": "{{baseUrl}}/sedes/1"
           }
         }
@@ -485,12 +654,22 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 403', () => pm.response.to.have.status(403));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": "{{baseUrl}}/especialidades"
           }
         },
@@ -499,12 +678,22 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
             "url": "{{baseUrl}}/especialidades"
           }
         },
@@ -528,10 +717,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"descripcion\": \"Especialidad Test\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Especialidad Test\"\n}"
+            },
             "url": "{{baseUrl}}/especialidades"
           }
         },
@@ -540,16 +738,30 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"descripcion\": \"Especialidad Test Editada\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Especialidad Test Editada\"\n}"
+            },
             "url": "{{baseUrl}}/especialidades/{{especialidadId}}"
           }
         },
@@ -558,12 +770,22 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
             "url": "{{baseUrl}}/especialidades/{{especialidadId}}"
           }
         },
@@ -572,12 +794,22 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 409', () => pm.response.to.have.status(409));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
             "url": "{{baseUrl}}/especialidades/1"
           }
         }
@@ -592,26 +824,48 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
-          "request": { "method": "GET", "url": "{{baseUrl}}/coberturas" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/coberturas"
+          }
         },
         {
           "name": "POST /coberturas - rol paciente (403)",
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 403', () => pm.response.to.have.status(403));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Cobertura Test\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cobertura Test\"\n}"
+            },
             "url": "{{baseUrl}}/coberturas"
           }
         },
@@ -635,10 +889,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Cobertura Test\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cobertura Test\"\n}"
+            },
             "url": "{{baseUrl}}/coberturas"
           }
         },
@@ -647,16 +910,30 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Cobertura Test Editada\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cobertura Test Editada\"\n}"
+            },
             "url": "{{baseUrl}}/coberturas/{{coberturaId}}"
           }
         },
@@ -665,12 +942,22 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
             "url": "{{baseUrl}}/coberturas/{{coberturaId}}"
           }
         },
@@ -679,12 +966,22 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 409', () => pm.response.to.have.status(409));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
             "url": "{{baseUrl}}/coberturas/1"
           }
         }
@@ -699,12 +996,22 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 403', () => pm.response.to.have.status(403));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": "{{baseUrl}}/agenda"
           }
         },
@@ -728,8 +1035,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenOperador}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -743,14 +1056,25 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 403', () => pm.response.to.have.status(403));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenMedico}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -778,7 +1102,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenOperador}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
             "url": "{{baseUrl}}/agenda?id_medico={{medicoId}}&fecha=2026-09-01"
           }
         },
@@ -787,14 +1116,25 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenOperador}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -808,12 +1148,22 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenOperador}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
             "url": "{{baseUrl}}/agenda/{{agendaId}}"
           }
         }
@@ -843,8 +1193,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenOperador}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -877,8 +1233,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenAdmin}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -911,8 +1273,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -945,8 +1313,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -981,8 +1355,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1015,8 +1395,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1054,8 +1440,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1089,8 +1481,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1124,8 +1522,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenOperador}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1158,8 +1562,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenOperador}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1192,7 +1602,12 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": "{{baseUrl}}/turnos/2/cancelar"
           }
         },
@@ -1224,7 +1639,12 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": "{{baseUrl}}/turnos/{{turnoId}}/cancelar"
           }
         },
@@ -1251,7 +1671,12 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": "{{baseUrl}}/turnos/{{turnoId}}/cancelar"
           }
         },
@@ -1277,8 +1702,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1310,7 +1741,12 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenOperador}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
             "url": "{{baseUrl}}/turnos/{{turnoAtenderId}}/atender"
           }
         },
@@ -1344,8 +1780,14 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenMedico}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1377,7 +1819,12 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenMedico}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
+            ],
             "url": "{{baseUrl}}/turnos/{{turnoAtenderId}}/atender"
           }
         },
@@ -1404,7 +1851,12 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{tokenOperador}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
             "url": "{{baseUrl}}/turnos/{{turnoAtenderId}}/cancelar"
           }
         },
@@ -1430,14 +1882,556 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{tokenMedico}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{}"
             },
             "url": "{{baseUrl}}/turnos/{{turnoOperadorId}}/atender"
+          }
+        },
+        {
+          "name": "GET /turnos/mis-turnos - paciente (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve un array', () => pm.expect(cuerpo.datos).to.be.an('array'));",
+                  "pm.test('Incluye los turnos del paciente', () => pm.expect(cuerpo.datos.length).to.be.at.least(2));",
+                  "pm.test('Viene ordenado del mas proximo al menos proximo', () => {",
+                  "  for (let i = 1; i < cuerpo.datos.length; i++) {",
+                  "    const anterior = cuerpo.datos[i - 1].fecha + ' ' + cuerpo.datos[i - 1].hora;",
+                  "    const actual = cuerpo.datos[i].fecha + ' ' + cuerpo.datos[i].hora;",
+                  "    pm.expect(anterior <= actual).to.be.true;",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/turnos/mis-turnos"
+          }
+        },
+        {
+          "name": "GET /turnos/mis-turnos - rol medico (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
+            ],
+            "url": "{{baseUrl}}/turnos/mis-turnos"
+          }
+        },
+        {
+          "name": "GET /turnos/programados - medico, falta la fecha (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
+            ],
+            "url": "{{baseUrl}}/turnos/programados"
+          }
+        },
+        {
+          "name": "GET /turnos/programados - medico (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve solo turnos de ese medico', () => {",
+                  "  pm.expect(cuerpo.datos.length).to.be.at.least(3);",
+                  "  cuerpo.datos.forEach((turno) => pm.expect(String(turno.id_medico)).to.eql(pm.variables.get('medicoId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
+            ],
+            "url": "{{baseUrl}}/turnos/programados?fecha=2026-09-02"
+          }
+        },
+        {
+          "name": "GET /turnos/sede - operador (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve turnos de la sede', () => pm.expect(cuerpo.datos.length).to.be.at.least(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": "{{baseUrl}}/turnos/sede?fecha=2026-09-02"
+          }
+        },
+        {
+          "name": "GET /turnos/sede - rol paciente (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/turnos/sede?fecha=2026-09-02"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Historial clinico",
+      "description": "Requiere que ya corrio el folder Turnos completo (usa {{turnoAtenderId}}, {{turnoOperadorId}}, {{turnoId}} y {{pacienteId}}). {{turnoAtenderId}} ya tiene historial (se cargo junto con 'atender'); {{turnoOperadorId}} quedo atendido sin historial, para probar la carga posterior.",
+      "item": [
+        {
+          "name": "POST /historial - rol paciente (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_turno\": {{turnoAtenderId}},\n  \"diagnostico\": \"No deberia poder\"\n}"
+            },
+            "url": "{{baseUrl}}/historial"
+          }
+        },
+        {
+          "name": "POST /historial - turno no atendido (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_turno\": {{turnoId}},\n  \"diagnostico\": \"No corresponde, esta cancelado\"\n}"
+            },
+            "url": "{{baseUrl}}/historial"
+          }
+        },
+        {
+          "name": "POST /historial - medico, ya tiene historial cargado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_turno\": {{turnoAtenderId}},\n  \"diagnostico\": \"Duplicado\"\n}"
+            },
+            "url": "{{baseUrl}}/historial"
+          }
+        },
+        {
+          "name": "POST /historial - medico carga historial posterior (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Queda asociado al turno atendido sin diagnostico', () =>",
+                  "  pm.expect(String(cuerpo.datos.id_turno)).to.eql(String(pm.collectionVariables.get('turnoOperadorId'))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_turno\": {{turnoOperadorId}},\n  \"diagnostico\": \"Control post-operatorio sin novedades\",\n  \"tratamiento\": \"Seguimiento ambulatorio\",\n  \"observaciones\": \"Paciente estable\"\n}"
+            },
+            "url": "{{baseUrl}}/historial"
+          }
+        },
+        {
+          "name": "GET /historial/paciente/{{pacienteId}} - paciente ve su historial completo (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae los dos registros del paciente', () => pm.expect(cuerpo.datos.length).to.be.at.least(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/historial/paciente/{{pacienteId}}"
+          }
+        },
+        {
+          "name": "GET /historial/paciente/2 - paciente intenta ver el historial de otro (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/historial/paciente/2"
+          }
+        },
+        {
+          "name": "GET /historial/paciente/{{pacienteId}} - medico ve solo lo que el atendio (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Todos los registros son de ese medico', () => {",
+                  "  const medicoId = pm.variables.get('medicoId');",
+                  "  cuerpo.datos.forEach((registro) => pm.expect(String(registro.id_medico)).to.eql(medicoId));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
+            ],
+            "url": "{{baseUrl}}/historial/paciente/{{pacienteId}}"
+          }
+        },
+        {
+          "name": "GET /historial/paciente/{{pacienteId}} - rol operador sin acceso (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": "{{baseUrl}}/historial/paciente/{{pacienteId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notificaciones",
+      "description": "Requiere que ya corrieron Autenticacion y Turnos (ahi se generaron las notificaciones de confirmacion, cancelacion y atencion).",
+      "item": [
+        {
+          "name": "GET /notificaciones - sin token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/notificaciones"
+          }
+        },
+        {
+          "name": "GET /notificaciones - paciente (200, guarda {{notificacionId}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve un array', () => pm.expect(cuerpo.datos).to.be.an('array'));",
+                  "pm.test('Trae al menos las notificaciones de sus turnos', () => pm.expect(cuerpo.datos.length).to.be.at.least(3));",
+                  "pm.test('Viene ordenado de mas reciente a mas antigua', () => {",
+                  "  for (let i = 1; i < cuerpo.datos.length; i++) {",
+                  "    pm.expect(cuerpo.datos[i - 1].fecha >= cuerpo.datos[i].fecha).to.be.true;",
+                  "  }",
+                  "});",
+                  "pm.test('Se crean no leidas', () => pm.expect(cuerpo.datos[0].leida).to.eql(0));",
+                  "",
+                  "if (cuerpo.datos.length > 0) {",
+                  "  pm.collectionVariables.set('notificacionId', cuerpo.datos[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/notificaciones"
+          }
+        },
+        {
+          "name": "PATCH /notificaciones/{{notificacionId}}/leer - operador intenta leer la de otro usuario (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": "{{baseUrl}}/notificaciones/{{notificacionId}}/leer"
+          }
+        },
+        {
+          "name": "PATCH /notificaciones/{{notificacionId}}/leer - paciente (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda marcada como leida', () => pm.expect(cuerpo.datos.leida).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/notificaciones/{{notificacionId}}/leer"
+          }
+        },
+        {
+          "name": "PATCH /notificaciones/999/leer - no existe (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/notificaciones/999/leer"
           }
         }
       ]

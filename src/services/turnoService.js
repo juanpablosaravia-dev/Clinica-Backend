@@ -35,7 +35,7 @@ const ROL_OPERADOR = 'operador';
 // El DATE_FORMAT es deliberado: sin él, mysql2 devuelve la columna DATE como un
 // Date de JS y la respuesta sale como '2026-09-01T03:00:00.000Z', con riesgo de
 // correrse un día según el huso horario del servidor.
-async function buscarTurnoConAgenda(id, conexion = pool, bloquear = false) {
+export async function buscarTurnoConAgenda(id, conexion = pool, bloquear = false) {
   const [turnos] = await conexion.query(
     `SELECT t.id, t.nota, t.id_agenda, DATE_FORMAT(t.fecha, '%Y-%m-%d') AS fecha, t.hora,
             t.id_paciente, t.id_cobertura, t.estado,
@@ -308,4 +308,46 @@ export async function atenderTurno(id, datos, usuario) {
       notificaciones: [notificacion],
     };
   });
+}
+
+// Mismo SELECT con JOIN que buscarTurnoConAgenda, pero sin filtrar por id: lo
+// reutilizan los tres listados de abajo, cada uno con su propio WHERE.
+const SELECT_TURNOS_CON_AGENDA = `
+  SELECT t.id, t.nota, t.id_agenda, DATE_FORMAT(t.fecha, '%Y-%m-%d') AS fecha, t.hora,
+         t.id_paciente, t.id_cobertura, t.estado,
+         a.id_medico, a.id_sede, a.id_especialidad
+    FROM turno t
+    JOIN agenda a ON t.id_agenda = a.id
+`;
+
+// "Mis turnos": todos los del paciente logueado, del mas proximo al menos proximo.
+export async function misTurnos(usuario) {
+  const [turnos] = await pool.query(
+    `${SELECT_TURNOS_CON_AGENDA} WHERE t.id_paciente = ? ORDER BY t.fecha ASC, t.hora ASC`,
+    [usuario.id]
+  );
+  return turnos;
+}
+
+// "Turnos programados": los del medico logueado para una fecha puntual.
+export async function turnosProgramados(usuario, fecha) {
+  validarFormatoFecha(fecha);
+  const [turnos] = await pool.query(
+    `${SELECT_TURNOS_CON_AGENDA} WHERE a.id_medico = ? AND t.fecha = ? ORDER BY t.hora ASC`,
+    [usuario.id, fecha]
+  );
+  return turnos;
+}
+
+// Turnos de la sede del operador logueado, para una fecha puntual.
+export async function turnosSede(usuario, fecha) {
+  validarFormatoFecha(fecha);
+  if (usuario.id_sede === null || usuario.id_sede === undefined) {
+    throw new ErrorHttp(403, 'El usuario no tiene una sede asignada');
+  }
+  const [turnos] = await pool.query(
+    `${SELECT_TURNOS_CON_AGENDA} WHERE a.id_sede = ? AND t.fecha = ? ORDER BY t.hora ASC`,
+    [usuario.id_sede, fecha]
+  );
+  return turnos;
 }

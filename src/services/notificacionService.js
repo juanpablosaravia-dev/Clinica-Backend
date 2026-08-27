@@ -1,4 +1,5 @@
 import pool from '../database/conexion.js';
+import { ErrorHttp } from '../utils/errorHttp.js';
 
 export const TIPO_TURNO_CONFIRMADO = 'turno_confirmado';
 export const TIPO_TURNO_CANCELADO = 'turno_cancelado';
@@ -28,4 +29,32 @@ export async function crearNotificacion({ id_usuario, tipo, mensaje }, conexion 
 export function formatearFechaHumana(fechaIso) {
   const [anio, mes, dia] = String(fechaIso).split('-');
   return `${dia}/${mes}/${anio}`;
+}
+
+// Solo las del usuario autenticado. Se desempata por id porque cancelar un
+// turno genera dos notificaciones (paciente y médico) en el mismo segundo.
+export async function listarNotificaciones(idUsuario) {
+  const [notificaciones] = await pool.query(
+    'SELECT id, id_usuario, tipo, mensaje, leida, fecha FROM notificacion WHERE id_usuario = ? ORDER BY fecha DESC, id DESC',
+    [idUsuario]
+  );
+  return notificaciones;
+}
+
+export async function marcarNotificacionLeida(id, usuario) {
+  const [notificaciones] = await pool.query(
+    'SELECT id, id_usuario, tipo, mensaje, leida, fecha FROM notificacion WHERE id = ?',
+    [id]
+  );
+  if (notificaciones.length === 0) {
+    throw new ErrorHttp(404, 'Notificación no encontrada');
+  }
+
+  const notificacion = notificaciones[0];
+  if (Number(notificacion.id_usuario) !== Number(usuario.id)) {
+    throw new ErrorHttp(403, 'No puede marcar como leída una notificación de otro usuario');
+  }
+
+  await pool.query('UPDATE notificacion SET leida = 1 WHERE id = ?', [id]);
+  return { ...notificacion, leida: 1 };
 }

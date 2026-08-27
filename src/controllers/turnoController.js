@@ -28,3 +28,30 @@ export async function atenderTurno(req, res) {
     return manejarError(res, error);
   }
 }
+
+export async function misTurnos(req, res) {
+  try {
+    const turnos = await turnoService.misTurnos(req.usuario);
+    return enviarRespuesta(res, 200, turnos);
+  } catch (error) {
+    return manejarError(res, error);
+  }
+}
+
+export async function turnosProgramados(req, res) {
+  try {
+    const turnos = await turnoService.turnosProgramados(req.usuario, req.query.fecha);
+    return enviarRespuesta(res, 200, turnos);
+  } catch (error) {
+    return manejarError(res, error);
+  }
+}
+
+export async function turnosSede(req, res) {
+  try {
+    const turnos = await turnoService.turnosSede(req.usuario, req.query.fecha);
+    return enviarRespuesta(res, 200, turnos);
+  } catch (error) {
+    return manejarError(res, error);
+  }
+}

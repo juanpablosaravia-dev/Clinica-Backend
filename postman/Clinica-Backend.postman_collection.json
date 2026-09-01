@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Clinica-Backend - Semanas 1 a 3",
-    "description": "Coleccion organizada en carpetas por recurso. Antes de correr nada:\n\n1. Importar tambien el archivo 'Clinica-Backend.postman_environment.json' y seleccionarlo como Environment activo (arriba a la derecha en Postman). Ahi estan las credenciales de cada usuario de prueba (paciente, admin, medico, operador), separadas de la coleccion para que sea mas facil de leer.\n2. Con la base ya cargada (ScriptSQL.sql), correr una vez 'npm run seed:usuarios' en el backend: les setea password real a los usuarios admin/medico/operador del seed (sus hashes originales son placeholders y no sirven para loguear). Las passwords que deja ese script son las mismas que ya estan en el Environment.\n3. Levantar el backend con 'npm run dev'.\n\nOrden sugerido para correr las carpetas: Salud -> Autenticacion -> Sedes -> Especialidades -> Coberturas -> Agenda -> Turnos -> Historial clinico -> Notificaciones. Los folders de Sedes/Especialidades/Coberturas necesitan haber corrido antes 'POST /auth/login - admin' (dentro de Autenticacion). El folder de Agenda necesita 'POST /auth/login - medico' y 'POST /auth/login - operador'. El folder de Turnos necesita ademas 'GET /auth/perfil - con token', que es de donde sale {{pacienteId}}.\n\nEl folder de Historial clinico necesita que ya corrio Turnos completo (usa esos mismos turnos). El folder de Notificaciones necesita Autenticacion y Turnos (las notificaciones se generan solas al confirmar/cancelar/atender un turno, no hay endpoint de alta).",
+    "name": "Clinica-Backend - Semanas 1 a 4",
+    "description": "Coleccion organizada en carpetas por recurso. Antes de correr nada:\n\n1. Importar tambien el archivo 'Clinica-Backend.postman_environment.json' y seleccionarlo como Environment activo (arriba a la derecha en Postman). Ahi estan las credenciales de cada usuario de prueba (paciente, admin, medico, operador), separadas de la coleccion para que sea mas facil de leer.\n2. Con la base ya cargada (ScriptSQL.sql), correr una vez 'npm run seed:usuarios' en el backend: les setea password real a los usuarios admin/medico/operador del seed (sus hashes originales son placeholders y no sirven para loguear). Las passwords que deja ese script son las mismas que ya estan en el Environment.\n3. Levantar el backend con 'npm run dev'.\n\nOrden sugerido para correr las carpetas: Salud -> Autenticacion -> Sedes -> Especialidades -> Coberturas -> Agenda -> Turnos -> Historial clinico -> Notificaciones -> Auditoria -> Reportes. Los folders de Sedes/Especialidades/Coberturas necesitan haber corrido antes 'POST /auth/login - admin' (dentro de Autenticacion). El folder de Agenda necesita 'POST /auth/login - medico' y 'POST /auth/login - operador'. El folder de Turnos necesita ademas 'GET /auth/perfil - con token', que es de donde sale {{pacienteId}}.\n\nEl folder de Historial clinico necesita que ya corrio Turnos completo (usa esos mismos turnos). El folder de Notificaciones necesita Autenticacion y Turnos (las notificaciones se generan solas al confirmar/cancelar/atender un turno, no hay endpoint de alta).\n\nLos folders de Auditoria y Reportes (semana 4) van al final porque leen lo que dejaron los anteriores: la auditoria consulta los logs que el middleware escribio durante los CRUD de sede/especialidad/cobertura, y los reportes agregan sobre los turnos que creo el folder Turnos.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -2432,6 +2432,559 @@
               }
             ],
             "url": "{{baseUrl}}/notificaciones/999/leer"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auditoria (solo admin)",
+      "description": "El log NO tiene endpoint de alta: lo escribe el middleware auditar() cada vez que un POST/PUT/DELETE sobre sede, especialidad, cobertura o usuario termina bien. Por eso este folder requiere haber corrido antes Autenticacion, Sedes, Especialidades y Coberturas: de ahi salen los registros que se consultan aca.",
+      "item": [
+        {
+          "name": "GET /auditoria - sin token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auditoria"
+          }
+        },
+        {
+          "name": "GET /auditoria - rol paciente (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auditoria"
+          }
+        },
+        {
+          "name": "GET /auditoria - admin, sin filtros (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Formato uniforme { codigo, estado, datos }', () =>",
+                  "  pm.expect(cuerpo).to.have.all.keys('codigo', 'estado', 'datos'));",
+                  "pm.test('Registro automatico de las acciones previas', () =>",
+                  "  pm.expect(cuerpo.datos.length).to.be.at.least(4));",
+                  "pm.test('Cada log trae quien, que, sobre que y detalle', () => {",
+                  "  const log = cuerpo.datos[0];",
+                  "  pm.expect(log).to.include.keys('id_usuario', 'accion', 'entidad', 'detalle', 'fecha');",
+                  "});",
+                  "pm.test('Solo se auditan ALTA / BAJA / MODIFICACION', () =>",
+                  "  cuerpo.datos.forEach((log) =>",
+                  "    pm.expect(['ALTA', 'BAJA', 'MODIFICACION']).to.include(log.accion)));",
+                  "pm.test('Viene de mas reciente a mas antiguo', () => {",
+                  "  for (let i = 1; i < cuerpo.datos.length; i++) {",
+                  "    pm.expect(cuerpo.datos[i - 1].fecha >= cuerpo.datos[i].fecha).to.be.true;",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auditoria"
+          }
+        },
+        {
+          "name": "GET /auditoria?entidad=sede - filtro por entidad (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Hay logs de sede', () => pm.expect(cuerpo.datos.length).to.be.at.least(1));",
+                  "pm.test('Todos son de la entidad sede', () =>",
+                  "  cuerpo.datos.forEach((log) => pm.expect(log.entidad).to.eql('sede')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auditoria?entidad=sede"
+          }
+        },
+        {
+          "name": "GET /auditoria?entidad=sede - el alta, la edicion y la baja quedaron registradas (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "// El folder Sedes hace POST + PUT + DELETE sobre la sede de prueba:",
+                  "// las tres acciones tienen que haber quedado auditadas solas.",
+                  "const acciones = cuerpo.datos.map((log) => log.accion);",
+                  "pm.test('Quedo registrada el alta', () => pm.expect(acciones).to.include('ALTA'));",
+                  "pm.test('Quedo registrada la modificacion', () => pm.expect(acciones).to.include('MODIFICACION'));",
+                  "pm.test('Quedo registrada la baja', () => pm.expect(acciones).to.include('BAJA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auditoria?entidad=sede"
+          }
+        },
+        {
+          "name": "GET /auditoria?entidad=usuario - el registro publico queda auditado (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El alta del paciente quedo registrada', () =>",
+                  "  pm.expect(cuerpo.datos.length).to.be.at.least(1));",
+                  "pm.test('Es un ALTA de usuario', () => {",
+                  "  pm.expect(cuerpo.datos[0].entidad).to.eql('usuario');",
+                  "  pm.expect(cuerpo.datos[0].accion).to.eql('ALTA');",
+                  "});",
+                  "pm.test('Sin token, el autor es el propio usuario recien creado', () =>",
+                  "  pm.expect(String(cuerpo.datos[0].id_usuario)).to.eql(String(cuerpo.datos[0].id_entidad)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auditoria?entidad=usuario"
+          }
+        },
+        {
+          "name": "GET /auditoria?id_usuario= - filtro por usuario (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El admin tiene acciones registradas', () =>",
+                  "  pm.expect(cuerpo.datos.length).to.be.at.least(1));",
+                  "pm.test('Todos los logs son del admin', () =>",
+                  "  cuerpo.datos.forEach((log) => pm.expect(String(log.id_usuario)).to.eql(String(pm.variables.get('adminId')))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auditoria?id_usuario={{adminId}}"
+          }
+        },
+        {
+          "name": "GET /auditoria - rango de fechas que incluye hoy (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae los logs de hoy', () => pm.expect(cuerpo.datos.length).to.be.at.least(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auditoria?desde=2020-01-01&hasta=2100-12-31"
+          }
+        },
+        {
+          "name": "GET /auditoria - rango de fechas sin resultados (200, vacio)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No hay logs en ese periodo viejo', () => pm.expect(cuerpo.datos).to.eql([]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auditoria?desde=2000-01-01&hasta=2000-12-31"
+          }
+        },
+        {
+          "name": "GET /auditoria - fecha con formato invalido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('No es un error 500', () => pm.expect(pm.response.code).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auditoria?desde=01/01/2026"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reportes y estadisticas (solo admin)",
+      "description": "Consultas agregadas sobre turno/agenda/especialidad/sede, sin tablas nuevas. Requiere haber corrido antes el folder Turnos (de ahi salen los turnos confirmados, cancelados y atendidos que alimentan los indicadores). Los cuatro aceptan el filtro opcional ?desde=&hasta=.",
+      "item": [
+        {
+          "name": "GET /reportes/turnos-por-especialidad - rol paciente (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reportes/turnos-por-especialidad"
+          }
+        },
+        {
+          "name": "GET /reportes/turnos-por-especialidad - admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve un array', () => pm.expect(cuerpo.datos).to.be.an('array'));",
+                  "pm.test('Trae la especialidad de los turnos cargados', () =>",
+                  "  pm.expect(cuerpo.datos.length).to.be.at.least(1));",
+                  "pm.test('Cada fila trae especialidad y cantidad', () => {",
+                  "  const fila = cuerpo.datos[0];",
+                  "  pm.expect(fila).to.include.keys('id_especialidad', 'descripcion', 'cantidad');",
+                  "  pm.expect(fila.cantidad).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reportes/turnos-por-especialidad"
+          }
+        },
+        {
+          "name": "GET /reportes/turnos-por-sede - admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Cada fila trae sede y cantidad', () => {",
+                  "  const fila = cuerpo.datos[0];",
+                  "  pm.expect(fila).to.include.keys('id_sede', 'nombre', 'cantidad');",
+                  "  pm.expect(fila.cantidad).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reportes/turnos-por-sede"
+          }
+        },
+        {
+          "name": "GET /reportes/ranking-medicos - admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve el ranking completo, no solo el primero', () =>",
+                  "  pm.expect(cuerpo.datos).to.be.an('array'));",
+                  "pm.test('Cuenta los turnos atendidos del medico', () => {",
+                  "  const fila = cuerpo.datos[0];",
+                  "  pm.expect(fila).to.include.keys('id_medico', 'nombre', 'apellido', 'turnos_atendidos');",
+                  "  pm.expect(fila.turnos_atendidos).to.be.at.least(1);",
+                  "});",
+                  "pm.test('Ordenado de mayor a menor', () => {",
+                  "  for (let i = 1; i < cuerpo.datos.length; i++) {",
+                  "    pm.expect(cuerpo.datos[i - 1].turnos_atendidos >= cuerpo.datos[i].turnos_atendidos).to.be.true;",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reportes/ranking-medicos"
+          }
+        },
+        {
+          "name": "GET /reportes/tasa-cancelacion - admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae total, cancelados y tasa', () =>",
+                  "  pm.expect(cuerpo.datos).to.have.all.keys('total', 'cancelados', 'tasa'));",
+                  "pm.test('El folder Turnos dejo un turno cancelado', () =>",
+                  "  pm.expect(cuerpo.datos.cancelados).to.be.at.least(1));",
+                  "pm.test('La tasa es cancelados sobre el total', () =>",
+                  "  pm.expect(cuerpo.datos.tasa).to.eql(Number((cuerpo.datos.cancelados / cuerpo.datos.total).toFixed(4))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reportes/tasa-cancelacion"
+          }
+        },
+        {
+          "name": "GET /reportes/tasa-cancelacion - periodo sin turnos (200, tasa 0)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Sin turnos el total es 0', () => pm.expect(cuerpo.datos.total).to.eql(0));",
+                  "pm.test('No divide por cero: la tasa es 0', () => pm.expect(cuerpo.datos.tasa).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reportes/tasa-cancelacion?desde=2000-01-01&hasta=2000-12-31"
+          }
+        },
+        {
+          "name": "GET /reportes/turnos-por-especialidad - filtrado por rango de fechas (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El rango que cubre los turnos trae datos', () =>",
+                  "  pm.expect(cuerpo.datos.length).to.be.at.least(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reportes/turnos-por-especialidad?desde=2026-09-01&hasta=2026-09-30"
+          }
+        },
+        {
+          "name": "GET /reportes/turnos-por-especialidad - rango sin turnos (200, vacio)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Fuera del rango no hay turnos', () => pm.expect(cuerpo.datos).to.eql([]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reportes/turnos-por-especialidad?desde=2000-01-01&hasta=2000-12-31"
+          }
+        },
+        {
+          "name": "GET /reportes/ranking-medicos - fecha invalida (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('No es un error 500', () => pm.expect(pm.response.code).to.not.eql(500));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/reportes/ranking-medicos?hasta=31-12-2026"
           }
         }
       ]

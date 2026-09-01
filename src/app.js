@@ -9,6 +9,8 @@ import agendaRoutes from './routes/agendaRoutes.js';
 import turnoRoutes from './routes/turnoRoutes.js';
 import historialRoutes from './routes/historialRoutes.js';
 import notificacionRoutes from './routes/notificacionRoutes.js';
+import auditoriaRoutes from './routes/auditoriaRoutes.js';
+import reporteRoutes from './routes/reporteRoutes.js';
 import { enviarRespuesta } from './utils/respuesta.js';
 
 const app = express();
@@ -25,6 +27,8 @@ app.use('/agenda', agendaRoutes);
 app.use('/turnos', turnoRoutes);
 app.use('/historial', historialRoutes);
 app.use('/notificaciones', notificacionRoutes);
+app.use('/auditoria', auditoriaRoutes);
+app.use('/reportes', reporteRoutes);
 
 app.use((req, res) => {
   enviarRespuesta(res, 404, null, 'Recurso no encontrado');

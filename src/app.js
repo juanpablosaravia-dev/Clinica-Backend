@@ -34,4 +34,17 @@ app.use((req, res) => {
   enviarRespuesta(res, 404, null, 'Recurso no encontrado');
 });
 
+// Ultimo middleware y el unico de cuatro argumentos: Express lo reserva para los
+// errores. Sin el, un body con JSON roto no llega a ningun controller (falla
+// dentro de express.json()) y Express responde su pagina HTML por defecto, que
+// es la unica respuesta del proyecto que no tiene la forma { codigo, estado, datos }.
+app.use((error, req, res, next) => {
+  if (error?.type === 'entity.parse.failed' || error instanceof SyntaxError) {
+    return enviarRespuesta(res, 400, null, 'El cuerpo de la petición no es un JSON válido');
+  }
+
+  console.error('Error no controlado:', error);
+  return enviarRespuesta(res, 500, null, 'Error interno del servidor');
+});
+
 export default app;

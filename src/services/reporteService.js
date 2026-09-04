@@ -1,13 +1,21 @@
 import pool from '../database/conexion.js';
+import { ErrorHttp } from '../utils/errorHttp.js';
 import { validarFormatoFecha } from '../utils/validaciones.js';
 
+const ESTADO_CONFIRMADO = 'confirmado';
 const ESTADO_CANCELADO = 'cancelado';
 const ESTADO_ATENDIDO = 'atendido';
 
+const ESTADOS_VALIDOS = [ESTADO_CONFIRMADO, ESTADO_CANCELADO, ESTADO_ATENDIDO];
+
 // Los cuatro reportes filtran por el mismo rango de fechas sobre turno.fecha,
-// asi que el WHERE se arma una sola vez aca. Ambos limites son opcionales:
-// sin filtros devuelve el WHERE vacio y la consulta toma todo el historico.
-function armarFiltroFechas({ desde, hasta } = {}) {
+// asi que el WHERE se arma una sola vez aca. Los filtros son opcionales:
+// sin ninguno devuelve el WHERE vacio y la consulta toma todo el historico.
+//
+// `estado` solo lo pasan los dos reportes de cantidad. El ranking cuenta siempre
+// los 'atendido' (lo pide la consigna) y la tasa de cancelacion necesita el total
+// del periodo como denominador, asi que ninguno de los dos lo admite.
+function armarFiltroTurnos({ desde, hasta, estado } = {}) {
   const condiciones = [];
   const valores = [];
 
@@ -21,6 +29,16 @@ function armarFiltroFechas({ desde, hasta } = {}) {
     condiciones.push('t.fecha <= ?');
     valores.push(hasta);
   }
+  if (estado) {
+    // Mismo criterio que validarFormatoFecha: un valor que no existe es un error
+    // del cliente (400) y no un reporte vacio con 200, que se leeria como "no
+    // hubo turnos" cuando en realidad el filtro estaba mal escrito.
+    if (!ESTADOS_VALIDOS.includes(estado)) {
+      throw new ErrorHttp(400, `El campo estado debe ser uno de: ${ESTADOS_VALIDOS.join(', ')}`);
+    }
+    condiciones.push('t.estado = ?');
+    valores.push(estado);
+  }
 
   return {
     where: condiciones.length > 0 ? `WHERE ${condiciones.join(' AND ')}` : '',
@@ -28,8 +46,11 @@ function armarFiltroFechas({ desde, hasta } = {}) {
   };
 }
 
+// Sin ?estado=, `cantidad` es el total de turnos del periodo (la demanda), asi
+// que cancelar uno no mueve el numero. Con ?estado=cancelado se ve cuantos de
+// esos turnos se cancelaron.
 export async function turnosPorEspecialidad(filtros) {
-  const { where, valores } = armarFiltroFechas(filtros);
+  const { where, valores } = armarFiltroTurnos(filtros);
 
   const [filas] = await pool.query(
     `SELECT e.id AS id_especialidad, e.descripcion, COUNT(*) AS cantidad
@@ -45,7 +66,7 @@ export async function turnosPorEspecialidad(filtros) {
 }
 
 export async function turnosPorSede(filtros) {
-  const { where, valores } = armarFiltroFechas(filtros);
+  const { where, valores } = armarFiltroTurnos(filtros);
 
   const [filas] = await pool.query(
     `SELECT s.id AS id_sede, s.nombre, COUNT(*) AS cantidad
@@ -61,8 +82,10 @@ export async function turnosPorSede(filtros) {
 }
 
 // Ranking completo (no solo el primero), del que mas atendio al que menos.
-export async function rankingMedicos(filtros) {
-  const { where, valores } = armarFiltroFechas(filtros);
+export async function rankingMedicos(filtros = {}) {
+  // El estado no es configurable aca: "turnos atendidos" es parte de la
+  // definicion del indicador, asi que un ?estado= en la query se ignora.
+  const { where, valores } = armarFiltroTurnos({ desde: filtros.desde, hasta: filtros.hasta });
   // El estado se suma al WHERE que ya armo el helper: si no habia filtros de
   // fecha el where viene vacio, asi que hay que abrir el WHERE en ese caso.
   const whereConEstado = where
@@ -82,10 +105,13 @@ export async function rankingMedicos(filtros) {
   return filas;
 }
 
-export async function tasaCancelacion(filtros) {
-  const { where, valores } = armarFiltroFechas(filtros);
+export async function tasaCancelacion(filtros = {}) {
+  // Tampoco admite ?estado=: el denominador de la tasa es el total de turnos del
+  // periodo. Filtrarlo por estado daria siempre 0 o 1.
+  const { where, valores } = armarFiltroTurnos({ desde: filtros.desde, hasta: filtros.hasta });
 
   // Una sola pasada: COUNT(*) da el total y el SUM condicional los cancelados.
+  // El ? del SUM va primero porque esta en el SELECT, antes del WHERE.
   const [filas] = await pool.query(
     `SELECT COUNT(*) AS total,
             SUM(CASE WHEN t.estado = ? THEN 1 ELSE 0 END) AS cancelados

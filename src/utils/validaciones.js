@@ -42,6 +42,15 @@ export function validarFormatoHora(valor, nombreCampo = 'hora') {
   }
 }
 
+export function validarEnteroPositivo(valor, nombreCampo) {
+  // Los filtros llegan por query string, asi que siempre son texto: Number('')
+  // da 0 y Number('abc') da NaN. Se descartan los dos.
+  const numero = Number(valor);
+  if (String(valor).trim() === '' || !Number.isInteger(numero) || numero <= 0) {
+    throw new ErrorHttp(400, `El campo ${nombreCampo} debe ser un número entero positivo`);
+  }
+}
+
 export function validarLargoMaximo(valor, largoMaximo, nombreCampo) {
   if (valor === undefined || valor === null) {
     return;

@@ -1,5 +1,5 @@
 import pool from '../database/conexion.js';
-import { validarFormatoFecha } from '../utils/validaciones.js';
+import { validarEnteroPositivo, validarFormatoFecha } from '../utils/validaciones.js';
 
 export const ACCION_ALTA = 'ALTA';
 export const ACCION_BAJA = 'BAJA';
@@ -39,6 +39,10 @@ export async function listarLogs(filtros = {}) {
   const valores = [];
 
   if (id_usuario) {
+    // Sin esta validacion, un ?id_usuario=abc devolveria 200 con lista vacia
+    // (que se lee como "ese usuario no hizo nada") mientras que un ?desde=abc
+    // devuelve 400. Los cuatro filtros del endpoint responden igual.
+    validarEnteroPositivo(id_usuario, 'id_usuario');
     condiciones.push('id_usuario = ?');
     valores.push(id_usuario);
   }

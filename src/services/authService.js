@@ -16,7 +16,7 @@ const CAMPOS_REQUERIDOS_REGISTRO = [
   'id_cobertura',
 ];
 
-const CAMPOS_REQUERIDOS_LOGIN = ['email', 'password'];
+const CAMPOS_REQUERIDOS_LOGIN = ['dni', 'password'];
 
 export async function registrarPaciente(datos) {
   validarCamposRequeridos(datos, CAMPOS_REQUERIDOS_REGISTRO);
@@ -61,15 +61,15 @@ export async function registrarPaciente(datos) {
 
 export async function iniciarSesion(credenciales) {
   validarCamposRequeridos(credenciales, CAMPOS_REQUERIDOS_LOGIN);
-  const { email, password } = credenciales;
+  const { dni, password } = credenciales;
 
   const [usuarios] = await pool.query(
-    'SELECT id, password, rol, id_sede FROM usuario WHERE email = ?',
-    [email]
+    'SELECT id, password, rol, id_sede FROM usuario WHERE dni = ?',
+    [dni]
   );
 
-  // Se responde el mismo mensaje cuando el email no existe y cuando la
-  // contraseña es incorrecta, para no revelar qué emails están registrados.
+  // Se responde el mismo mensaje cuando el DNI no existe y cuando la
+  // contraseña es incorrecta, para no revelar qué DNIs están registrados.
   if (usuarios.length === 0) {
     throw new ErrorHttp(401, 'Credenciales inválidas');
   }
@@ -93,7 +93,7 @@ export async function iniciarSesion(credenciales) {
 // nunca la contraseña hasheada.
 export async function obtenerPerfil(idUsuario) {
   const [usuarios] = await pool.query(
-    'SELECT id, nombre, apellido, email, rol, id_sede FROM usuario WHERE id = ?',
+    'SELECT id, nombre, apellido, dni, email, rol, id_sede FROM usuario WHERE id = ?',
     [idUsuario]
   );
 

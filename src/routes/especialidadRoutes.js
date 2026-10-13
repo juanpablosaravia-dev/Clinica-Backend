@@ -7,10 +7,12 @@ import {
 } from '../controllers/especialidadController.js';
 import { verificarToken } from '../middlewares/verificarToken.js';
 import { verificarRol } from '../middlewares/verificarRol.js';
+import { auditar } from '../middlewares/auditoria.js';
 
 const router = Router();
 
-router.use(verificarToken, verificarRol('admin'));
+// auditar() solo registra POST/PUT/DELETE que hayan salido bien; el GET pasa de largo.
+router.use(verificarToken, verificarRol('admin'), auditar('especialidad'));
 
 router.get('/', listarEspecialidades);
 router.post('/', crearEspecialidad);

@@ -1,8 +1,26 @@
 import pool from '../database/conexion.js';
 import { ErrorHttp } from '../utils/errorHttp.js';
-import { validarCamposRequeridos } from '../utils/validaciones.js';
+import {
+  validarCamposRequeridos,
+  validarFormatoFecha,
+  validarFormatoHora,
+} from '../utils/validaciones.js';
 
 const CAMPOS_REQUERIDOS = ['hora_entrada', 'hora_salida', 'fecha', 'id_medico', 'id_especialidad', 'id_sede'];
+
+// Sin esta validacion, una fecha como '02/09/2026' o una hora como '9:00' llegan
+// crudas al INSERT y MySQL responde con un error de tipo, que el controller
+// traduce a un 500 generico. La consigna pide error controlado, no 500.
+//
+// Ademas, el formato estricto 'HH:MM' no es cosmetico: resolverAgenda() decide
+// si un turno cae dentro de la franja comparando las horas como texto
+// (horaEnRango), y un '9:00' guardado en la agenda haria que ningun turno de
+// esa franja se pueda reservar.
+function validarFormatoAgenda({ fecha, hora_entrada, hora_salida }) {
+  validarFormatoFecha(fecha);
+  validarFormatoHora(hora_entrada, 'hora_entrada');
+  validarFormatoHora(hora_salida, 'hora_salida');
+}
 
 // El rol medico solo puede gestionar su propia agenda; el operador puede
 // gestionar la de cualquier medico y sede.
@@ -51,6 +69,7 @@ export async function listarAgenda(filtros, usuario) {
 
 export async function crearAgenda(datos, usuario) {
   validarCamposRequeridos(datos, CAMPOS_REQUERIDOS);
+  validarFormatoAgenda(datos);
   const { hora_entrada, hora_salida, fecha, id_medico, id_especialidad, id_sede } = datos;
   validarPropiedadAgenda(usuario, id_medico);
 
@@ -64,6 +83,7 @@ export async function crearAgenda(datos, usuario) {
 
 export async function actualizarAgenda(id, datos, usuario) {
   validarCamposRequeridos(datos, CAMPOS_REQUERIDOS);
+  validarFormatoAgenda(datos);
   const agenda = await buscarAgendaPorId(id);
   validarPropiedadAgenda(usuario, agenda.id_medico);
   const { hora_entrada, hora_salida, fecha, id_medico, id_especialidad, id_sede } = datos;

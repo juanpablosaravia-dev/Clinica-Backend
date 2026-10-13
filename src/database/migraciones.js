@@ -41,4 +41,17 @@ export async function asegurarRestricciones() {
     'ALTER TABLE notificacion MODIFY id INT NOT NULL AUTO_INCREMENT',
     []
   );
+
+  // Mismo problema que notificacion.id, y mas silencioso todavia: log_auditoria.id
+  // tambien es tinyint(4), asi que el AUTO_INCREMENT se agota a las 127 filas. Como
+  // el middleware `auditar` traga a proposito el error del INSERT (para no tumbar
+  // una operacion que para el cliente ya salio bien), el sintoma no seria un 500
+  // sino que los logs dejarian de escribirse sin que nadie se entere. Ninguna FK
+  // referencia log_auditoria.id, asi que ampliarla no da el error 3780 que si
+  // impide tocar turno e historial_clinico.
+  await ejecutarMigracion(
+    'ampliación de log_auditoria.id a INT',
+    'ALTER TABLE log_auditoria MODIFY id INT NOT NULL AUTO_INCREMENT',
+    []
+  );
 }

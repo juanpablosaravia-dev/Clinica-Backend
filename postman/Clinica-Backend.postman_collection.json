@@ -353,7 +353,7 @@
               "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
             },
             "url": "{{baseUrl}}/auth/login",
-            "description": "### POST /auth/login\nValida las credenciales y devuelve el JWT que usan todos los endpoints protegidos.\n\n**Rol:** público — no requiere token.\n**Headers:** `Content-Type: application/json`.\n**Body:**\n\n| Campo | Tipo |\n|---|---|\n| `email` | string (requerido) |\n| `password` | string (requerido) |\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos.token` es el JWT. Su payload es `{ id, rol, id_sede }` y vence según `JWT_EXPIRES_IN`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta `email` o `password`. |\n| `401` | `Credenciales inválidas` | Email inexistente **o** password incorrecta. Es el mismo mensaje a propósito, para no revelar qué emails están registrados. |\n\n> Este request guarda el token en la variable de colección `{{token}}` (paciente). Los tres logins del final del folder hacen lo mismo con `{{tokenAdmin}}`, `{{tokenMedico}}` y `{{tokenOperador}}`."
+            "description": "### POST /auth/login\nValida las credenciales y devuelve el JWT que usan todos los endpoints protegidos.\n\n**Rol:** público — no requiere token.\n**Headers:** `Content-Type: application/json`.\n**Body:**\n\n| Campo | Tipo |\n|---|---|\n| `dni` | string (requerido) |\n| `password` | string (requerido) |\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos.token` es el JWT. Su payload es `{ id, rol, id_sede }` y vence según `JWT_EXPIRES_IN`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta `dni` o `password`. |\n| `401` | `Credenciales inválidas` | DNI inexistente **o** password incorrecta. Es el mismo mensaje a propósito, para no revelar qué DNIs están registrados. |\n\n> Este request guarda el token en la variable de colección `{{token}}` (paciente). Los tres logins del final del folder hacen lo mismo con `{{tokenAdmin}}`, `{{tokenMedico}}` y `{{tokenOperador}}`."
           },
           "response": [
             {
@@ -371,7 +371,7 @@
                   "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
                 },
                 "url": "{{baseUrl}}/auth/login",
-                "description": "### POST /auth/login\nValida las credenciales y devuelve el JWT que usan todos los endpoints protegidos.\n\n**Rol:** público — no requiere token.\n**Headers:** `Content-Type: application/json`.\n**Body:**\n\n| Campo | Tipo |\n|---|---|\n| `email` | string (requerido) |\n| `password` | string (requerido) |\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos.token` es el JWT. Su payload es `{ id, rol, id_sede }` y vence según `JWT_EXPIRES_IN`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta `email` o `password`. |\n| `401` | `Credenciales inválidas` | Email inexistente **o** password incorrecta. Es el mismo mensaje a propósito, para no revelar qué emails están registrados. |\n\n> Este request guarda el token en la variable de colección `{{token}}` (paciente). Los tres logins del final del folder hacen lo mismo con `{{tokenAdmin}}`, `{{tokenMedico}}` y `{{tokenOperador}}`."
+                "description": "### POST /auth/login\nValida las credenciales y devuelve el JWT que usan todos los endpoints protegidos.\n\n**Rol:** público — no requiere token.\n**Headers:** `Content-Type: application/json`.\n**Body:**\n\n| Campo | Tipo |\n|---|---|\n| `dni` | string (requerido) |\n| `password` | string (requerido) |\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos.token` es el JWT. Su payload es `{ id, rol, id_sede }` y vence según `JWT_EXPIRES_IN`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta `dni` o `password`. |\n| `401` | `Credenciales inválidas` | DNI inexistente **o** password incorrecta. Es el mismo mensaje a propósito, para no revelar qué DNIs están registrados. |\n\n> Este request guarda el token en la variable de colección `{{token}}` (paciente). Los tres logins del final del folder hacen lo mismo con `{{tokenAdmin}}`, `{{tokenMedico}}` y `{{tokenOperador}}`."
               },
               "status": "OK",
               "code": 200,
@@ -400,7 +400,7 @@
                   "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
                 },
                 "url": "{{baseUrl}}/auth/login",
-                "description": "### POST /auth/login\nValida las credenciales y devuelve el JWT que usan todos los endpoints protegidos.\n\n**Rol:** público — no requiere token.\n**Headers:** `Content-Type: application/json`.\n**Body:**\n\n| Campo | Tipo |\n|---|---|\n| `email` | string (requerido) |\n| `password` | string (requerido) |\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos.token` es el JWT. Su payload es `{ id, rol, id_sede }` y vence según `JWT_EXPIRES_IN`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta `email` o `password`. |\n| `401` | `Credenciales inválidas` | Email inexistente **o** password incorrecta. Es el mismo mensaje a propósito, para no revelar qué emails están registrados. |\n\n> Este request guarda el token en la variable de colección `{{token}}` (paciente). Los tres logins del final del folder hacen lo mismo con `{{tokenAdmin}}`, `{{tokenMedico}}` y `{{tokenOperador}}`."
+                "description": "### POST /auth/login\nValida las credenciales y devuelve el JWT que usan todos los endpoints protegidos.\n\n**Rol:** público — no requiere token.\n**Headers:** `Content-Type: application/json`.\n**Body:**\n\n| Campo | Tipo |\n|---|---|\n| `dni` | string (requerido) |\n| `password` | string (requerido) |\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos.token` es el JWT. Su payload es `{ id, rol, id_sede }` y vence según `JWT_EXPIRES_IN`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta `dni` o `password`. |\n| `401` | `Credenciales inválidas` | DNI inexistente **o** password incorrecta. Es el mismo mensaje a propósito, para no revelar qué DNIs están registrados. |\n\n> Este request guarda el token en la variable de colección `{{token}}` (paciente). Los tres logins del final del folder hacen lo mismo con `{{tokenAdmin}}`, `{{tokenMedico}}` y `{{tokenOperador}}`."
               },
               "status": "Unauthorized",
               "code": 401,
@@ -429,7 +429,7 @@
                   "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
                 },
                 "url": "{{baseUrl}}/auth/login",
-                "description": "### POST /auth/login\nValida las credenciales y devuelve el JWT que usan todos los endpoints protegidos.\n\n**Rol:** público — no requiere token.\n**Headers:** `Content-Type: application/json`.\n**Body:**\n\n| Campo | Tipo |\n|---|---|\n| `email` | string (requerido) |\n| `password` | string (requerido) |\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos.token` es el JWT. Su payload es `{ id, rol, id_sede }` y vence según `JWT_EXPIRES_IN`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta `email` o `password`. |\n| `401` | `Credenciales inválidas` | Email inexistente **o** password incorrecta. Es el mismo mensaje a propósito, para no revelar qué emails están registrados. |\n\n> Este request guarda el token en la variable de colección `{{token}}` (paciente). Los tres logins del final del folder hacen lo mismo con `{{tokenAdmin}}`, `{{tokenMedico}}` y `{{tokenOperador}}`."
+                "description": "### POST /auth/login\nValida las credenciales y devuelve el JWT que usan todos los endpoints protegidos.\n\n**Rol:** público — no requiere token.\n**Headers:** `Content-Type: application/json`.\n**Body:**\n\n| Campo | Tipo |\n|---|---|\n| `dni` | string (requerido) |\n| `password` | string (requerido) |\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos.token` es el JWT. Su payload es `{ id, rol, id_sede }` y vence según `JWT_EXPIRES_IN`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta `dni` o `password`. |\n| `401` | `Credenciales inválidas` | DNI inexistente **o** password incorrecta. Es el mismo mensaje a propósito, para no revelar qué DNIs están registrados. |\n\n> Este request guarda el token en la variable de colección `{{token}}` (paciente). Los tres logins del final del folder hacen lo mismo con `{{tokenAdmin}}`, `{{tokenMedico}}` y `{{tokenOperador}}`."
               },
               "status": "Bad Request",
               "code": 400,
@@ -472,11 +472,11 @@
               "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"passwordIncorrecta\"\n}"
             },
             "url": "{{baseUrl}}/auth/login",
-            "description": "Caso de error de `POST /auth/login`: email que existe, password que no. Responde `401 Credenciales inválidas`."
+            "description": "Caso de error de `POST /auth/login`: DNI que existe, password que no. Responde `401 Credenciales inválidas`."
           }
         },
         {
-          "name": "POST /auth/login - email inexistente (401, mismo mensaje)",
+          "name": "POST /auth/login - dni inexistente (401, mismo mensaje)",
           "event": [
             {
               "listen": "test",
@@ -499,10 +499,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"noexiste@example.com\",\n  \"password\": \"{{pacientePassword}}\"\n}"
+              "raw": "{\n  \"dni\": \"99999999\",\n  \"password\": \"{{pacientePassword}}\"\n}"
             },
             "url": "{{baseUrl}}/auth/login",
-            "description": "Caso de error de `POST /auth/login`: email que no existe. Responde **el mismo** `401 Credenciales inválidas` que la password incorrecta, para no filtrar qué emails están registrados."
+            "description": "Caso de error de `POST /auth/login`: DNI que no existe. Responde **el mismo** `401 Credenciales inválidas` que la password incorrecta, para no filtrar qué DNIs están registrados."
           }
         },
         {

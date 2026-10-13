@@ -21,6 +21,14 @@ pnpm dev
 > El script deja: `Admin123!`, `Medico123!` y `Operador123!`, que son las mismas contraseñas que
 > ya están cargadas en el Environment de Postman. Es idempotente: correrlo de nuevo no rompe nada.
 
+El login (`POST /auth/login`) se hace con **DNI y contraseña** (lo pide la consigna del frontend):
+
+| Rol | DNI | Contraseña |
+|---|---|---|
+| admin | `18222333` | `Admin123!` |
+| medico | `20111222` | `Medico123!` |
+| operador | `15200548` | `Operador123!` |
+
 Variables de entorno (ver `.env.example`): `PORT`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `DB_HOST`,
 `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
 

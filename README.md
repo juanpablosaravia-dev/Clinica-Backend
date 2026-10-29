@@ -4,12 +4,25 @@ API REST del TP Integrador. Node.js + Express 4 + MySQL/MariaDB, sin ORM (driver
 
 ## Puesta en marcha
 
+Antes de arrancar, crear una base vacía `clinica` e importar `sql/ScriptSQL.sql`
+(`mysql -u root -p clinica < sql/ScriptSQL.sql`, o desde phpMyAdmin / Workbench).
+
 ```bash
 pnpm install
 cp .env.example .env      # y completar las credenciales de la base
 pnpm seed:usuarios        # ver la advertencia de abajo
+pnpm seed:demo            # datos de prueba para el frontend (opcional, ver abajo)
 pnpm dev
 ```
+
+`pnpm seed:demo` (`src/database/crearDatosPrueba.js`) carga lo que pide la consigna del frontend:
+tres médicos con distintas especialidades (Ana Lopez atiende en dos sedes), la paciente Sofia
+Martinez (`35111222` / `Paciente123!`), agenda para ayer, hoy y los próximos días, y turnos en los
+tres estados (el atendido con historial clínico). Las fechas se calculan al correrlo. Si los datos
+ya estaban cargados, no hace nada.
+
+> La colección de Postman espera la base tal como la deja `ScriptSQL.sql` + `pnpm seed:usuarios`,
+> así que para correrla completa conviene hacerlo antes de `pnpm seed:demo` (o sobre una base nueva).
 
 > ### ⚠️ `pnpm seed:usuarios` no es opcional
 >
@@ -59,6 +72,35 @@ Todas las respuestas, de éxito o de error, tienen la forma `{ codigo, estado, d
 | `404` | El recurso —o la ruta— no existe. |
 | `409` | Conflicto: horario ocupado, transición de estado inválida o baja con dependencias. |
 | `500` | Error interno. Nunca se usa para errores de validación. |
+
+## Cambios para el frontend (semanas 2 a 4)
+
+Documentados en la carpeta **"Frontend - endpoints nuevos y ampliados"** de la colección de Postman.
+
+**Endpoints nuevos**
+
+| Método y ruta | Rol | Qué hace |
+|---|---|---|
+| `GET /medicos?id_especialidad=&id_sede=` | Cualquiera con sesión | Médicos con sus especialidades (sin otros datos personales). |
+| `GET /disponibilidad/fechas?id_medico=&id_especialidad=&id_sede=` | paciente, operador | Fechas con agenda y algún horario libre. |
+| `GET /disponibilidad/horarios?...&fecha=` | paciente, operador | Horarios libres del día (turnos de 30 minutos menos los confirmados). |
+| `GET /pacientes?busqueda=` | operador, médico, admin | Búsqueda por DNI o apellido. |
+| `PUT /auth/perfil` | paciente | Actualiza email, contraseña, teléfono y cobertura. Auditado. |
+| `GET /usuarios` | admin | Listado completo (con sede, cobertura y especialidades). |
+| `POST /usuarios` | admin | Alta de operador, médico (con especialidades) o admin. Auditado. |
+| `PUT /usuarios/:id` | admin | Edición de cualquier usuario. Auditado. |
+
+**Cambios en endpoints existentes**
+
+- `GET /sedes` y `GET /especialidades`: abiertos a cualquier usuario con sesión (el ABM sigue siendo del admin).
+- Agenda: el listado devuelve los nombres de médico, especialidad y sede; el operador solo da de
+  alta, modifica o elimina rangos de su sede (403); no se puede eliminar un rango con turnos
+  confirmados ni modificarlo dejando algún turno afuera (409); la salida debe ser posterior a la entrada (400).
+- `DELETE /especialidades/:id`: también valida que no se use en la agenda.
+- Turnos: duran 30 minutos (`src/utils/horarios.js`, misma regla para el alta y para la
+  disponibilidad); el médico opera sobre sus propios turnos en cualquier sede; los listados traen
+  nombres, fecha de nacimiento del paciente y el historial clínico si fue atendido.
+- `GET /auth/perfil` suma teléfono, fecha de nacimiento, cobertura y sede; `GET /auditoria` suma el nombre del usuario.
 
 ## Migraciones automáticas
 

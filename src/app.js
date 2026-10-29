@@ -11,6 +11,10 @@ import historialRoutes from './routes/historialRoutes.js';
 import notificacionRoutes from './routes/notificacionRoutes.js';
 import auditoriaRoutes from './routes/auditoriaRoutes.js';
 import reporteRoutes from './routes/reporteRoutes.js';
+import medicoRoutes from './routes/medicoRoutes.js';
+import disponibilidadRoutes from './routes/disponibilidadRoutes.js';
+import pacienteRoutes from './routes/pacienteRoutes.js';
+import usuarioRoutes from './routes/usuarioRoutes.js';
 import { enviarRespuesta } from './utils/respuesta.js';
 
 const app = express();
@@ -29,6 +33,10 @@ app.use('/historial', historialRoutes);
 app.use('/notificaciones', notificacionRoutes);
 app.use('/auditoria', auditoriaRoutes);
 app.use('/reportes', reporteRoutes);
+app.use('/medicos', medicoRoutes);
+app.use('/disponibilidad', disponibilidadRoutes);
+app.use('/pacientes', pacienteRoutes);
+app.use('/usuarios', usuarioRoutes);
 
 app.use((req, res) => {
   enviarRespuesta(res, 404, null, 'Recurso no encontrado');

@@ -29,3 +29,12 @@ export async function obtenerPerfil(req, res) {
     return manejarError(res, error);
   }
 }
+
+export async function actualizarMisDatos(req, res) {
+  try {
+    const perfil = await authService.actualizarMisDatos(req.usuario.id, req.body);
+    return enviarRespuesta(res, 200, perfil);
+  } catch (error) {
+    return manejarError(res, error);
+  }
+}

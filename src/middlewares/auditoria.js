@@ -12,12 +12,13 @@ const ACCION_POR_METODO = {
 };
 
 // En el alta el id recien se conoce cuando el controlador respondio (viene en
-// datos.id); en modificacion y baja ya venia en la URL.
+// datos.id); en modificacion y baja ya venia en la URL. PUT /auth/perfil no
+// tiene id en la URL: ahi se toma el de la respuesta.
 function obtenerIdEntidad(req, cuerpo) {
   if (req.method === 'POST') {
     return cuerpo?.datos?.id ?? null;
   }
-  return req.params.id ?? null;
+  return req.params.id ?? cuerpo?.datos?.id ?? null;
 }
 
 // Un middleware por entidad (`auditar('sede')`) para que el log quede escrito

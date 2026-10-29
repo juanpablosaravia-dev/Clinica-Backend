@@ -6,8 +6,8 @@ import {
   validarFormatoFecha,
   validarFormatoHora,
   validarLargoMaximo,
-  horaEnRango,
 } from '../utils/validaciones.js';
+import { generarHorarios } from '../utils/horarios.js';
 import {
   crearNotificacion,
   formatearFechaHumana,
@@ -27,6 +27,7 @@ const ESTADO_ATENDIDO = 'atendido';
 
 const ROL_PACIENTE = 'paciente';
 const ROL_OPERADOR = 'operador';
+const ROL_MEDICO = 'medico';
 
 // turno no tiene id_sede ni id_medico propios: viven en agenda. Por eso toda
 // lectura de un turno se hace con este JOIN, y de ahí salen los datos con los
@@ -52,12 +53,20 @@ export async function buscarTurnoConAgenda(id, conexion = pool, bloquear = false
   return turnos[0];
 }
 
-// El paciente solo alcanza sus propios turnos; operador y médico, únicamente los
-// de su sede (la sede del turno sale del JOIN con agenda).
+// El paciente solo alcanza sus propios turnos; el médico, los de su propia agenda
+// en cualquier sede donde atienda; el operador, únicamente los de su sede (la
+// sede del turno sale del JOIN con agenda).
 function validarAccesoTurno(turno, usuario) {
   if (usuario.rol === ROL_PACIENTE) {
     if (Number(turno.id_paciente) !== Number(usuario.id)) {
       throw new ErrorHttp(403, 'Un paciente solo puede cancelar sus propios turnos');
+    }
+    return;
+  }
+
+  if (usuario.rol === ROL_MEDICO) {
+    if (Number(turno.id_medico) !== Number(usuario.id)) {
+      throw new ErrorHttp(403, 'Un médico solo puede operar sobre sus propios turnos');
     }
     return;
   }
@@ -108,8 +117,11 @@ async function resolverAgenda({ id_medico, id_especialidad, id_sede, fecha, hora
 
   // Un médico puede tener más de una franja el mismo día (mañana y tarde), así
   // que no alcanza con tomar la primera: hay que quedarse con la que realmente
-  // cubre la hora pedida.
-  const agenda = agendas.find((franja) => horaEnRango(hora, franja.hora_entrada, franja.hora_salida));
+  // cubre la hora pedida. La hora tiene que ser uno de los horarios de turno de
+  // la franja (mismo cálculo que la consulta de horarios libres).
+  const agenda = agendas.find((franja) =>
+    generarHorarios(franja.hora_entrada, franja.hora_salida).includes(hora)
+  );
   if (!agenda) {
     throw new ErrorHttp(400, 'La hora solicitada está fuera del horario de atención del médico');
   }
@@ -312,12 +324,26 @@ export async function atenderTurno(id, datos, usuario) {
 
 // Mismo SELECT con JOIN que buscarTurnoConAgenda, pero sin filtrar por id: lo
 // reutilizan los tres listados de abajo, cada uno con su propio WHERE.
+// Suma los nombres (paciente, médico, especialidad, sede y cobertura), la fecha
+// de nacimiento del paciente para calcular la edad y, si el turno fue atendido,
+// el resumen del historial clínico. Así el front no resuelve ids uno por uno.
 const SELECT_TURNOS_CON_AGENDA = `
   SELECT t.id, t.nota, t.id_agenda, DATE_FORMAT(t.fecha, '%Y-%m-%d') AS fecha, t.hora,
          t.id_paciente, t.id_cobertura, t.estado,
-         a.id_medico, a.id_sede, a.id_especialidad
+         a.id_medico, a.id_sede, a.id_especialidad,
+         p.nombre AS nombre_paciente, p.apellido AS apellido_paciente,
+         DATE_FORMAT(p.fecha_nacimiento, '%Y-%m-%d') AS fecha_nacimiento_paciente,
+         m.nombre AS nombre_medico, m.apellido AS apellido_medico,
+         e.descripcion AS especialidad, s.nombre AS sede, c.nombre AS cobertura,
+         h.diagnostico, h.tratamiento, h.observaciones
     FROM turno t
     JOIN agenda a ON t.id_agenda = a.id
+    JOIN usuario p ON t.id_paciente = p.id
+    JOIN usuario m ON a.id_medico = m.id
+    JOIN especialidad e ON a.id_especialidad = e.id
+    JOIN sede s ON a.id_sede = s.id
+    LEFT JOIN cobertura c ON t.id_cobertura = c.id
+    LEFT JOIN historial_clinico h ON h.id_turno = t.id
 `;
 
 // "Mis turnos": todos los del paciente logueado, del mas proximo al menos proximo.

@@ -29,6 +29,24 @@ export async function actualizarAgenda(req, res) {
   }
 }
 
+export async function fechasDisponibles(req, res) {
+  try {
+    const fechas = await agendaService.fechasDisponibles(req.query);
+    return enviarRespuesta(res, 200, fechas);
+  } catch (error) {
+    return manejarError(res, error);
+  }
+}
+
+export async function horariosDisponibles(req, res) {
+  try {
+    const horarios = await agendaService.horariosDisponibles(req.query);
+    return enviarRespuesta(res, 200, horarios);
+  } catch (error) {
+    return manejarError(res, error);
+  }
+}
+
 export async function eliminarAgenda(req, res) {
   try {
     const resultado = await agendaService.eliminarAgenda(req.params.id, req.usuario);

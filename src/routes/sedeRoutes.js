@@ -11,12 +11,14 @@ import { auditar } from '../middlewares/auditoria.js';
 
 const router = Router();
 
-// auditar() solo registra POST/PUT/DELETE que hayan salido bien; el GET pasa de largo.
-router.use(verificarToken, verificarRol('admin'), auditar('sede'));
+// El listado lo necesita cualquier usuario con sesion (el paciente elige sede al
+// pedir turno, el medico al cargar su agenda). Alta, modificacion y baja siguen
+// siendo exclusivas del admin.
+router.get('/', verificarToken, listarSedes);
 
-router.get('/', listarSedes);
-router.post('/', crearSede);
-router.put('/:id', actualizarSede);
-router.delete('/:id', eliminarSede);
+// auditar() solo registra POST/PUT/DELETE que hayan salido bien.
+router.post('/', verificarToken, verificarRol('admin'), auditar('sede'), crearSede);
+router.put('/:id', verificarToken, verificarRol('admin'), auditar('sede'), actualizarSede);
+router.delete('/:id', verificarToken, verificarRol('admin'), auditar('sede'), eliminarSede);
 
 export default router;

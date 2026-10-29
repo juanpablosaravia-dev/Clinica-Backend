@@ -885,7 +885,7 @@
       ]
     },
     {
-      "name": "Sedes (solo admin)",
+      "name": "Sedes (listado con sesión, ABM admin)",
       "description": "ABM de sedes (`nombre`, `direccion`, `telefono`). **Los cuatro endpoints, incluido el `GET`, son exclusivos del rol `admin`**: así lo pide la consigna de la semana 2 (*\"accesibles únicamente para el rol administrador; un intento de acceso con otro rol responde 403\"*).\n\nRequiere haber corrido antes `POST /auth/login - admin` en la carpeta Autenticacion.",
       "item": [
         {
@@ -908,14 +908,14 @@
           }
         },
         {
-          "name": "GET /sedes - rol paciente (403)",
+          "name": "GET /sedes - rol paciente (200)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
                 ]
               }
             }
@@ -929,7 +929,7 @@
               }
             ],
             "url": "{{baseUrl}}/sedes",
-            "description": "Caso de error de `GET /sedes`: token válido de `paciente`. Prueba el 403 de `verificarRol`."
+            "description": "Caso de `GET /sedes` con token de `paciente`: el listado es para cualquier usuario con sesión (lo usa el paciente al pedir turno). Alta, modificación y baja siguen siendo solo del admin."
           }
         },
         {
@@ -1428,18 +1428,18 @@
       ]
     },
     {
-      "name": "Especialidades (solo admin)",
+      "name": "Especialidades (listado con sesión, ABM admin)",
       "description": "ABM de especialidades (`descripcion`). **Los cuatro endpoints, incluido el `GET`, son exclusivos del rol `admin`** (consigna de la semana 2).\n\nRequiere haber corrido antes `POST /auth/login - admin` en la carpeta Autenticacion.",
       "item": [
         {
-          "name": "GET /especialidades - rol paciente (403)",
+          "name": "GET /especialidades - rol paciente (200)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
                 ]
               }
             }
@@ -1453,7 +1453,7 @@
               }
             ],
             "url": "{{baseUrl}}/especialidades",
-            "description": "Caso de error de `GET /especialidades`: token válido de `paciente`. Prueba el 403 de `verificarRol`."
+            "description": "Caso de `GET /especialidades` con token de `paciente`: el listado es para cualquier usuario con sesión (lo usa el paciente al pedir turno). Alta, modificación y baja siguen siendo solo del admin."
           }
         },
         {
@@ -6701,6 +6701,468 @@
               "body": "{\n  \"codigo\": 400,\n  \"estado\": \"El campo estado debe ser uno de: confirmado, cancelado, atendido\",\n  \"datos\": null\n}"
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "Frontend - endpoints nuevos y ampliados",
+      "description": "Endpoints agregados o ampliados para el frontend (semanas 2 a 4). Siguen el mismo formato de respuesta `{ codigo, estado, datos }` y están protegidos por rol.\n\nCambios en endpoints existentes:\n- `GET /sedes` y `GET /especialidades`: cualquier usuario con sesión.\n- `GET /agenda`: además de los ids devuelve `nombre_medico`, `apellido_medico`, `especialidad` y `sede`.\n- `POST/PUT/DELETE /agenda`: el operador solo opera en su sede (403); no se puede eliminar un rango con turnos confirmados ni modificarlo dejando turnos afuera (409); la hora de salida debe ser posterior a la de entrada (400).\n- `DELETE /especialidades/:id`: también valida que no esté usada en la agenda (409).\n- `POST /turnos`: la hora tiene que ser un horario de turno de la franja (turnos de 30 minutos).\n- `PATCH /turnos/:id/cancelar`: el médico opera sobre sus propios turnos en cualquier sede.\n- Listados de turnos: suman nombres de paciente, médico, especialidad, sede y cobertura, la fecha de nacimiento del paciente y el historial clínico si fue atendido.\n- `GET /auth/perfil`: suma teléfono, fecha de nacimiento, cobertura y sede.\n- `GET /auditoria`: suma `nombre_usuario` y `apellido_usuario`.",
+      "item": [
+        {
+          "name": "GET /medicos - paciente (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/medicos",
+            "description": "### GET /medicos\nListado de médicos con sus especialidades. Solo nombre, apellido y especialidades (sin otros datos personales).\n\n**Rol:** cualquier usuario con sesión.\n**Query (opcionales):** `id_especialidad`, `id_sede` (médicos asignados a esa sede o con agenda en ella).\n**Respuesta 200:** `[{ id, nombre, apellido, especialidades: [{ id, descripcion }] }]`.\n**Errores:** 401 sin token, 400 filtro no numérico."
+          }
+        },
+        {
+          "name": "GET /medicos?id_especialidad=1&id_sede=1 - filtrado (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/medicos?id_especialidad=1&id_sede=1",
+            "description": "Mismo endpoint con los dos filtros: lo usa el paso \"médico\" de la solicitud de turno."
+          }
+        },
+        {
+          "name": "GET /disponibilidad/fechas - paciente (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/disponibilidad/fechas?id_medico={{medicoId}}&id_especialidad=1&id_sede=1",
+            "description": "### GET /disponibilidad/fechas\nFechas (de hoy en adelante) en las que el médico tiene agenda para esa especialidad y sede, y que todavía tienen algún horario libre.\n\n**Rol:** `paciente` u `operador`.\n**Query (obligatorios):** `id_medico`, `id_especialidad`, `id_sede`.\n**Respuesta 200:** `[\"2026-11-02\", \"2026-11-04\"]`.\n**Errores:** 400 si falta un filtro o no es numérico, 403 otro rol."
+          }
+        },
+        {
+          "name": "GET /disponibilidad/horarios - paciente (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/disponibilidad/horarios?id_medico={{medicoId}}&id_especialidad=1&id_sede=1&fecha=2026-09-02",
+            "description": "### GET /disponibilidad/horarios\nHorarios libres de un día: los turnos de 30 minutos de las franjas de agenda, menos los que ya tienen un turno confirmado (y, si es hoy, menos los que ya pasaron). No expone datos de pacientes.\n\n**Rol:** `paciente` u `operador`.\n**Query (obligatorios):** `id_medico`, `id_especialidad`, `id_sede`, `fecha` (AAAA-MM-DD).\n**Respuesta 200:** `[\"09:00\", \"09:30\", \"10:30\"]`.\n**Errores:** 400 filtro faltante o fecha inválida, 403 otro rol."
+          }
+        },
+        {
+          "name": "GET /disponibilidad/fechas - rol medico (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
+            ],
+            "url": "{{baseUrl}}/disponibilidad/fechas?id_medico={{medicoId}}&id_especialidad=1&id_sede=1",
+            "description": "Caso de error: el médico no consulta disponibilidad."
+          }
+        },
+        {
+          "name": "GET /pacientes?busqueda= - operador (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": "{{baseUrl}}/pacientes?busqueda={{pacienteApellido}}",
+            "description": "### GET /pacientes\nBusca pacientes por DNI exacto o por apellido (que empiece con el texto). Máximo 20 resultados.\n\n**Rol:** `operador`, `medico` o `admin`.\n**Query:** `busqueda` (obligatorio).\n**Respuesta 200:** `[{ id, nombre, apellido, dni, fecha_nacimiento, id_cobertura, cobertura }]`.\n**Errores:** 400 sin `busqueda`, 403 rol paciente."
+          }
+        },
+        {
+          "name": "GET /pacientes - sin busqueda (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": "{{baseUrl}}/pacientes",
+            "description": "Caso de error: falta el texto de búsqueda."
+          }
+        },
+        {
+          "name": "GET /pacientes - rol paciente (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/pacientes?busqueda=a",
+            "description": "Caso de error: el paciente no puede buscar otros pacientes."
+          }
+        },
+        {
+          "name": "PUT /auth/perfil - paciente (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/perfil",
+            "description": "### PUT /auth/perfil\nEl paciente actualiza sus datos personales. Solo se modifican email, contraseña (se guarda hasheada), teléfono y cobertura: cualquier otro campo del body se ignora. Queda registrado en la auditoría.\n\n**Rol:** `paciente`.\n**Body:** `{ email, id_cobertura, telefono?, password? }` (si `password` no viene, no se cambia).\n**Respuesta 200:** el perfil actualizado (mismo formato que `GET /auth/perfil`).\n**Errores:** 400 campo faltante, email duplicado, teléfono no numérico o contraseña corta; 403 otro rol.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": {{pacienteEmail}},\n  \"telefono\": \"3424000000\",\n  \"id_cobertura\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "PUT /auth/perfil - rol admin (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/perfil",
+            "description": "Caso de error: solo el paciente usa este endpoint.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": {{adminEmail}},\n  \"id_cobertura\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /usuarios - admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/usuarios",
+            "description": "### GET /usuarios\nListado completo de usuarios con el nombre de su sede y cobertura y, para los médicos, sus especialidades. El frontend filtra (nombre, apellido, tipo y sede) y pagina sobre este listado.\n\n**Rol:** `admin`.\n**Respuesta 200:** `[{ id, nombre, apellido, dni, email, telefono, fecha_nacimiento, rol, id_sede, sede, id_cobertura, cobertura, especialidades: [{ id, descripcion }] }]`."
+          }
+        },
+        {
+          "name": "POST /usuarios - medico sin especialidades (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/usuarios",
+            "description": "### POST /usuarios\nAlta de usuarios de tipo `operador`, `medico` o `admin`. Operador y médico llevan `id_sede`; el admin no tiene sede. El médico lleva además `especialidades` (array de ids, al menos una). Queda registrado en la auditoría.\n\n**Rol:** `admin`.\n**Body:** `{ nombre, apellido, dni, email, password, fecha_nacimiento, telefono, rol, id_sede?, especialidades? }`.\n**Respuesta 201:** el usuario creado (sin contraseña).\n**Errores:** 400 campo faltante, rol inválido, sede faltante, médico sin especialidades o DNI/email duplicado; 403 otro rol.\n\nEste caso prueba el 400 del médico sin especialidades.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Prueba\",\n  \"apellido\": \"Postman\",\n  \"dni\": \"99888777\",\n  \"email\": \"prueba@postman.com\",\n  \"password\": \"Medico123!\",\n  \"fecha_nacimiento\": \"1980-01-01\",\n  \"telefono\": \"3420000000\",\n  \"rol\": \"medico\",\n  \"id_sede\": 1,\n  \"especialidades\": []\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /usuarios - rol operador (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": "{{baseUrl}}/usuarios",
+            "description": "Caso de error: solo el admin gestiona usuarios.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"X\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PUT /usuarios/:id - admin edita al operador (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/usuarios/1",
+            "description": "### PUT /usuarios/:id\nEdición de cualquier tipo de usuario, incluidos los pacientes. El rol no se cambia; la contraseña es opcional. Para el médico se reemplazan sus especialidades; para el paciente se exige `id_cobertura`. Queda registrado en la auditoría.\n\n**Rol:** `admin`.\n**Body:** `{ nombre, apellido, dni, email, fecha_nacimiento, telefono?, password?, id_sede?, id_cobertura?, especialidades? }`.\n**Respuesta 200:** el usuario actualizado.\n**Errores:** 400 validaciones, 404 usuario inexistente.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Perez\",\n  \"dni\": \"15200548\",\n  \"email\": \"jperez@gmail.com\",\n  \"fecha_nacimiento\": \"1995-12-30\",\n  \"telefono\": \"3424568897\",\n  \"id_sede\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /agenda - operador en sede ajena (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": "{{baseUrl}}/agenda",
+            "description": "Caso de error: el operador solo puede cargar agenda en su propia sede.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"10:00\",\n  \"fecha\": \"2026-09-03\",\n  \"id_medico\": {{medicoId}},\n  \"id_especialidad\": 1,\n  \"id_sede\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /agenda - salida anterior a la entrada (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
+            ],
+            "url": "{{baseUrl}}/agenda",
+            "description": "Caso de error: la hora de salida tiene que ser posterior a la de entrada.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"13:00\",\n  \"hora_salida\": \"09:00\",\n  \"fecha\": \"2026-09-03\",\n  \"id_medico\": {{medicoId}},\n  \"id_especialidad\": 1,\n  \"id_sede\": 1\n}"
+            }
+          }
         }
       ]
     }

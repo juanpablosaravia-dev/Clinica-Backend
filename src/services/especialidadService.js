@@ -52,6 +52,14 @@ export async function eliminarEspecialidad(id) {
     throw new ErrorHttp(409, 'No se puede eliminar la especialidad: tiene médicos asociados');
   }
 
+  const [agendaAsociada] = await pool.query(
+    'SELECT id FROM agenda WHERE id_especialidad = ? LIMIT 1',
+    [id]
+  );
+  if (agendaAsociada.length > 0) {
+    throw new ErrorHttp(409, 'No se puede eliminar la especialidad: tiene agenda asociada');
+  }
+
   await pool.query('DELETE FROM especialidad WHERE id = ?', [id]);
   return { mensaje: 'Especialidad eliminada con éxito' };
 }

@@ -43,30 +43,34 @@ export async function listarLogs(filtros = {}) {
     // (que se lee como "ese usuario no hizo nada") mientras que un ?desde=abc
     // devuelve 400. Los cuatro filtros del endpoint responden igual.
     validarEnteroPositivo(id_usuario, 'id_usuario');
-    condiciones.push('id_usuario = ?');
+    condiciones.push('l.id_usuario = ?');
     valores.push(id_usuario);
   }
   if (entidad) {
-    condiciones.push('entidad = ?');
+    condiciones.push('l.entidad = ?');
     valores.push(entidad);
   }
   if (desde) {
     validarFormatoFecha(desde, 'desde');
-    condiciones.push('DATE(fecha) >= ?');
+    condiciones.push('DATE(l.fecha) >= ?');
     valores.push(desde);
   }
   if (hasta) {
     validarFormatoFecha(hasta, 'hasta');
-    condiciones.push('DATE(fecha) <= ?');
+    condiciones.push('DATE(l.fecha) <= ?');
     valores.push(hasta);
   }
 
+  // El LEFT JOIN suma el nombre del usuario que hizo la accion, para no
+  // mostrar solo su id en la pantalla de auditoria.
   const where = condiciones.length > 0 ? `WHERE ${condiciones.join(' AND ')}` : '';
   const [logs] = await pool.query(
-    `SELECT id, id_usuario, accion, entidad, id_entidad, detalle, fecha
-       FROM log_auditoria
+    `SELECT l.id, l.id_usuario, l.accion, l.entidad, l.id_entidad, l.detalle, l.fecha,
+            u.nombre AS nombre_usuario, u.apellido AS apellido_usuario
+       FROM log_auditoria l
+       LEFT JOIN usuario u ON l.id_usuario = u.id
        ${where}
-       ORDER BY fecha DESC, id DESC`,
+       ORDER BY l.fecha DESC, l.id DESC`,
     valores
   );
   return logs;

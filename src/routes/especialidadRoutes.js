@@ -11,12 +11,12 @@ import { auditar } from '../middlewares/auditoria.js';
 
 const router = Router();
 
-// auditar() solo registra POST/PUT/DELETE que hayan salido bien; el GET pasa de largo.
-router.use(verificarToken, verificarRol('admin'), auditar('especialidad'));
+// Mismo criterio que sedes: el listado es para cualquier usuario con sesion y
+// el ABM queda para el admin.
+router.get('/', verificarToken, listarEspecialidades);
 
-router.get('/', listarEspecialidades);
-router.post('/', crearEspecialidad);
-router.put('/:id', actualizarEspecialidad);
-router.delete('/:id', eliminarEspecialidad);
+router.post('/', verificarToken, verificarRol('admin'), auditar('especialidad'), crearEspecialidad);
+router.put('/:id', verificarToken, verificarRol('admin'), auditar('especialidad'), actualizarEspecialidad);
+router.delete('/:id', verificarToken, verificarRol('admin'), auditar('especialidad'), eliminarEspecialidad);
 
 export default router;

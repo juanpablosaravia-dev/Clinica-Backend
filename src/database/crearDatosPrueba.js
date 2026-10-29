@@ -83,7 +83,13 @@ async function crearDatosPrueba() {
     DNI_MEDICO_CARDIOLOGIA,
   ]);
   if (yaCargados.length > 0) {
+    // Las fechas de la agenda se calcularon el dia en que se corrio por primera
+    // vez, asi que pueden haber quedado en el pasado.
     console.log('Los datos de prueba ya estaban cargados: no se hizo nada.');
+    console.log(
+      'Si la agenda quedó vieja (no hay turnos de hoy), recreá la base desde cero: ' +
+        'importar sql/ScriptSQL.sql, pnpm seed:usuarios y pnpm seed:demo (ver README).'
+    );
     await pool.end();
     return;
   }

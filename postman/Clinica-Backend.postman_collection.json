@@ -350,7 +350,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
+              "raw": "{\n  \"dni\": \"{{pacienteDni}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
             },
             "url": "{{baseUrl}}/auth/login",
             "description": "### POST /auth/login\nValida las credenciales y devuelve el JWT que usan todos los endpoints protegidos.\n\n**Rol:** público — no requiere token.\n**Headers:** `Content-Type: application/json`.\n**Body:**\n\n| Campo | Tipo |\n|---|---|\n| `dni` | string (requerido) |\n| `password` | string (requerido) |\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos.token` es el JWT. Su payload es `{ id, rol, id_sede }` y vence según `JWT_EXPIRES_IN`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta `dni` o `password`. |\n| `401` | `Credenciales inválidas` | DNI inexistente **o** password incorrecta. Es el mismo mensaje a propósito, para no revelar qué DNIs están registrados. |\n\n> Este request guarda el token en la variable de colección `{{token}}` (paciente). Los tres logins del final del folder hacen lo mismo con `{{tokenAdmin}}`, `{{tokenMedico}}` y `{{tokenOperador}}`."
@@ -368,7 +368,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
+                  "raw": "{\n  \"dni\": \"{{pacienteDni}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
                 },
                 "url": "{{baseUrl}}/auth/login",
                 "description": "### POST /auth/login\nValida las credenciales y devuelve el JWT que usan todos los endpoints protegidos.\n\n**Rol:** público — no requiere token.\n**Headers:** `Content-Type: application/json`.\n**Body:**\n\n| Campo | Tipo |\n|---|---|\n| `dni` | string (requerido) |\n| `password` | string (requerido) |\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos.token` es el JWT. Su payload es `{ id, rol, id_sede }` y vence según `JWT_EXPIRES_IN`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta `dni` o `password`. |\n| `401` | `Credenciales inválidas` | DNI inexistente **o** password incorrecta. Es el mismo mensaje a propósito, para no revelar qué DNIs están registrados. |\n\n> Este request guarda el token en la variable de colección `{{token}}` (paciente). Los tres logins del final del folder hacen lo mismo con `{{tokenAdmin}}`, `{{tokenMedico}}` y `{{tokenOperador}}`."
@@ -397,7 +397,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
+                  "raw": "{\n  \"dni\": \"{{pacienteDni}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
                 },
                 "url": "{{baseUrl}}/auth/login",
                 "description": "### POST /auth/login\nValida las credenciales y devuelve el JWT que usan todos los endpoints protegidos.\n\n**Rol:** público — no requiere token.\n**Headers:** `Content-Type: application/json`.\n**Body:**\n\n| Campo | Tipo |\n|---|---|\n| `dni` | string (requerido) |\n| `password` | string (requerido) |\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos.token` es el JWT. Su payload es `{ id, rol, id_sede }` y vence según `JWT_EXPIRES_IN`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta `dni` o `password`. |\n| `401` | `Credenciales inválidas` | DNI inexistente **o** password incorrecta. Es el mismo mensaje a propósito, para no revelar qué DNIs están registrados. |\n\n> Este request guarda el token en la variable de colección `{{token}}` (paciente). Los tres logins del final del folder hacen lo mismo con `{{tokenAdmin}}`, `{{tokenMedico}}` y `{{tokenOperador}}`."
@@ -426,7 +426,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
+                  "raw": "{\n  \"dni\": \"{{pacienteDni}}\",\n  \"password\": \"{{pacientePassword}}\"\n}"
                 },
                 "url": "{{baseUrl}}/auth/login",
                 "description": "### POST /auth/login\nValida las credenciales y devuelve el JWT que usan todos los endpoints protegidos.\n\n**Rol:** público — no requiere token.\n**Headers:** `Content-Type: application/json`.\n**Body:**\n\n| Campo | Tipo |\n|---|---|\n| `dni` | string (requerido) |\n| `password` | string (requerido) |\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos.token` es el JWT. Su payload es `{ id, rol, id_sede }` y vence según `JWT_EXPIRES_IN`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta `dni` o `password`. |\n| `401` | `Credenciales inválidas` | DNI inexistente **o** password incorrecta. Es el mismo mensaje a propósito, para no revelar qué DNIs están registrados. |\n\n> Este request guarda el token en la variable de colección `{{token}}` (paciente). Los tres logins del final del folder hacen lo mismo con `{{tokenAdmin}}`, `{{tokenMedico}}` y `{{tokenOperador}}`."
@@ -469,7 +469,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"password\": \"passwordIncorrecta\"\n}"
+              "raw": "{\n  \"dni\": \"{{pacienteDni}}\",\n  \"password\": \"passwordIncorrecta\"\n}"
             },
             "url": "{{baseUrl}}/auth/login",
             "description": "Caso de error de `POST /auth/login`: DNI que existe, password que no. Responde `401 Credenciales inválidas`."
@@ -484,7 +484,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Responde 401', () => pm.response.to.have.status(401));",
-                  "pm.test('No revela si el email existe', () => pm.expect(pm.response.json().estado).to.eql('Credenciales inválidas'));"
+                  "pm.test('No revela si el DNI existe', () => pm.expect(pm.response.json().estado).to.eql('Credenciales inválidas'));"
                 ]
               }
             }
@@ -528,7 +528,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{pacienteEmail}}\"\n}"
+              "raw": "{\n  \"dni\": \"{{pacienteDni}}\"\n}"
             },
             "url": "{{baseUrl}}/auth/login",
             "description": "Caso de error de `POST /auth/login`: body sin `password`."
@@ -564,7 +564,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{ \"email\": \"pedro@example.com\", "
+              "raw": "{ \"dni\": \"36000961\", "
             },
             "url": "{{baseUrl}}/auth/login",
             "description": "Caso de error transversal: el body no es JSON válido, así que falla dentro de `express.json()` y nunca llega al controller.\n\nSin un middleware de errores, Express respondería su página **HTML** por defecto, que sería la única respuesta del proyecto fuera del formato `{ codigo, estado, datos }`. Este request verifica que el manejador global de `app.js` la traduce a un `400` uniforme."
@@ -582,7 +582,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{ \"email\": \"pedro@example.com\", "
+                  "raw": "{ \"dni\": \"36000961\", "
                 },
                 "url": "{{baseUrl}}/auth/login",
                 "description": "Caso de error transversal: el body no es JSON válido, así que falla dentro de `express.json()` y nunca llega al controller.\n\nSin un middleware de errores, Express respondería su página **HTML** por defecto, que sería la única respuesta del proyecto fuera del formato `{ codigo, estado, datos }`. Este request verifica que el manejador global de `app.js` la traduce a un `400` uniforme."
@@ -810,7 +810,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+              "raw": "{\n  \"dni\": \"{{adminDni}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
             },
             "url": "{{baseUrl}}/auth/login",
             "description": "Mismo endpoint que `POST /auth/login` (ver ahí la documentación completa), con las credenciales del usuario de rol `admin` del seed. Guarda el token en `{{tokenAdmin}}` para los folders siguientes.\n\n> Requiere haber corrido una vez `pnpm seed:usuarios`: los hashes que trae `ScriptSQL.sql` son placeholders y sin ese script este login devuelve `401`."
@@ -843,7 +843,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{medicoEmail}}\",\n  \"password\": \"{{medicoPassword}}\"\n}"
+              "raw": "{\n  \"dni\": \"{{medicoDni}}\",\n  \"password\": \"{{medicoPassword}}\"\n}"
             },
             "url": "{{baseUrl}}/auth/login",
             "description": "Mismo endpoint que `POST /auth/login` (ver ahí la documentación completa), con las credenciales del usuario de rol `medico` del seed. Guarda el token en `{{tokenMedico}}` para los folders siguientes.\n\n> Requiere haber corrido una vez `pnpm seed:usuarios`: los hashes que trae `ScriptSQL.sql` son placeholders y sin ese script este login devuelve `401`."
@@ -876,7 +876,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{operadorEmail}}\",\n  \"password\": \"{{operadorPassword}}\"\n}"
+              "raw": "{\n  \"dni\": \"{{operadorDni}}\",\n  \"password\": \"{{operadorPassword}}\"\n}"
             },
             "url": "{{baseUrl}}/auth/login",
             "description": "Mismo endpoint que `POST /auth/login` (ver ahí la documentación completa), con las credenciales del usuario de rol `operador` del seed. Guarda el token en `{{tokenOperador}}` para los folders siguientes.\n\n> Requiere haber corrido una vez `pnpm seed:usuarios`: los hashes que trae `ScriptSQL.sql` son placeholders y sin ese script este login devuelve `401`."
@@ -6937,7 +6937,7 @@
             "description": "### PUT /auth/perfil\nEl paciente actualiza sus datos personales. Solo se modifican email, contraseña (se guarda hasheada), teléfono y cobertura: cualquier otro campo del body se ignora. Queda registrado en la auditoría.\n\n**Rol:** `paciente`.\n**Body:** `{ email, id_cobertura, telefono?, password? }` (si `password` no viene, no se cambia).\n**Respuesta 200:** el perfil actualizado (mismo formato que `GET /auth/perfil`).\n**Errores:** 400 campo faltante, email duplicado, teléfono no numérico o contraseña corta; 403 otro rol.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": {{pacienteEmail}},\n  \"telefono\": \"3424000000\",\n  \"id_cobertura\": 1\n}"
+              "raw": "{\n  \"email\": \"{{pacienteEmail}}\",\n  \"telefono\": \"3424000000\",\n  \"id_cobertura\": 1\n}"
             }
           }
         },
@@ -6970,7 +6970,7 @@
             "description": "Caso de error: solo el paciente usa este endpoint.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": {{adminEmail}},\n  \"id_cobertura\": 1\n}"
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"id_cobertura\": 1\n}"
             }
           }
         },

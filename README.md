@@ -21,6 +21,27 @@ Martinez (`35111222` / `Paciente123!`), agenda para ayer, hoy y los próximos d�
 tres estados (el atendido con historial clínico). Las fechas se calculan al correrlo. Si los datos
 ya estaban cargados, no hace nada.
 
+> ### ⚠️ Antes de la defensa: recrear la base el mismo día
+>
+> La agenda del seed cubre solo ayer, hoy, mañana y pasado mañana **contando desde el día en que
+> se corrió**, y `pnpm seed:demo` no se puede volver a correr para moverla (si encuentra los datos,
+> no hace nada). Si se cargó unos días antes, el día de la defensa no hay agenda ni turnos de hoy
+> y el paciente no ve fechas en "Nuevo turno". Por eso, el mismo día:
+>
+> ```sql
+> DROP DATABASE clinica;
+> CREATE DATABASE clinica CHARACTER SET utf8 COLLATE utf8_general_ci;
+> ```
+>
+> ```bash
+> mysql -u root -p clinica < sql/ScriptSQL.sql
+> pnpm seed:usuarios
+> pnpm seed:demo
+> ```
+>
+> Recrearla además reinicia los `AUTO_INCREMENT`: los `id` del script son `tinyint(4)` (máximo
+> 127, ver "Volver la base al estado inicial"), así que arrancar de cero deja todo el margen.
+
 > La colección de Postman espera la base tal como la deja `ScriptSQL.sql` + `pnpm seed:usuarios`,
 > así que para correrla completa conviene hacerlo antes de `pnpm seed:demo` (o sobre una base nueva).
 
@@ -95,7 +116,9 @@ Documentados en la carpeta **"Frontend - endpoints nuevos y ampliados"** de la c
 - `GET /sedes` y `GET /especialidades`: abiertos a cualquier usuario con sesión (el ABM sigue siendo del admin).
 - Agenda: el listado devuelve los nombres de médico, especialidad y sede; el operador solo da de
   alta, modifica o elimina rangos de su sede (403); no se puede eliminar un rango con turnos
-  confirmados ni modificarlo dejando algún turno afuera (409); la salida debe ser posterior a la entrada (400).
+  confirmados ni modificarlo dejando algún turno afuera (409); la salida debe ser posterior a la entrada (400);
+  un médico no puede tener dos rangos que se crucen el mismo día, ni siquiera en sedes distintas (409;
+  tocarse en el borde, como 09:00-13:00 y 13:00-17:00, sí se permite).
 - `DELETE /especialidades/:id`: también valida que no se use en la agenda.
 - Turnos: duran 30 minutos (`src/utils/horarios.js`, misma regla para el alta y para la
   disponibilidad); el médico opera sobre sus propios turnos en cualquier sede; los listados traen

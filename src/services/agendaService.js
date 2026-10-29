@@ -52,6 +52,30 @@ async function buscarAgendaPorId(id) {
   return registros[0];
 }
 
+// Un medico no puede tener dos rangos que se crucen el mismo dia, ni siquiera en
+// sedes distintas: si no, dos sedes podrian darle turno a la misma hora. Los
+// rangos que solo se tocan en el borde (09:00-13:00 y 13:00-17:00) no se cruzan.
+// Las horas son 'HH:MM', asi que se comparan bien como texto. En la
+// modificacion se excluye el propio rango (idExcluido).
+async function validarSinSuperposicion({ id_medico, fecha, hora_entrada, hora_salida }, idExcluido = 0) {
+  const [superpuestos] = await pool.query(
+    `SELECT a.hora_entrada, a.hora_salida, s.nombre AS sede
+       FROM agenda a
+       JOIN sede s ON a.id_sede = s.id
+      WHERE a.id_medico = ? AND a.fecha = ? AND a.id <> ?
+        AND a.hora_entrada < ? AND a.hora_salida > ?
+      LIMIT 1`,
+    [id_medico, fecha, idExcluido, hora_salida, hora_entrada]
+  );
+  if (superpuestos.length > 0) {
+    const { hora_entrada: entrada, hora_salida: salida, sede } = superpuestos[0];
+    throw new ErrorHttp(
+      409,
+      `El médico ya tiene agenda ese día de ${entrada} a ${salida} en ${sede}: los rangos no se pueden superponer`
+    );
+  }
+}
+
 async function buscarTurnosConfirmados(idAgenda) {
   const [turnos] = await pool.query('SELECT id, hora FROM turno WHERE id_agenda = ? AND estado = ?', [
     idAgenda,
@@ -103,6 +127,7 @@ export async function crearAgenda(datos, usuario) {
   validarFormatoAgenda(datos);
   const { hora_entrada, hora_salida, fecha, id_medico, id_especialidad, id_sede } = datos;
   validarPermisoAgenda(usuario, datos);
+  await validarSinSuperposicion(datos);
 
   const [resultado] = await pool.query(
     'INSERT INTO agenda (hora_entrada, hora_salida, fecha, id_medico, id_especialidad, id_sede) VALUES (?, ?, ?, ?, ?, ?)',
@@ -141,6 +166,8 @@ export async function actualizarAgenda(id, datos, usuario) {
       );
     }
   }
+
+  await validarSinSuperposicion(datos, id);
 
   await pool.query(
     'UPDATE agenda SET hora_entrada = ?, hora_salida = ?, fecha = ?, id_medico = ?, id_especialidad = ?, id_sede = ? WHERE id = ?',

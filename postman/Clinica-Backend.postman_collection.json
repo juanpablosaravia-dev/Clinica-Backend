@@ -2278,7 +2278,7 @@
               "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"13:00\",\n  \"fecha\": \"2026-09-01\",\n  \"id_medico\": {{medicoId}},\n  \"id_especialidad\": 1,\n  \"id_sede\": 1\n}"
             },
             "url": "{{baseUrl}}/agenda",
-            "description": "### POST /agenda\nCarga una franja de agenda. Se pueden cargar varias franjas para el mismo médico y la misma fecha.\n\n**Rol:** `medico` (solo la propia) u `operador` (la de cualquiera).\n**Headers:** `Authorization: Bearer <token>`, `Content-Type: application/json`.\n**Parámetros:** ninguno.\n**Body:** `{ \"hora_entrada\": \"HH:MM\"*, \"hora_salida\": \"HH:MM\"*, \"fecha\": \"AAAA-MM-DD\"*, \"id_medico\": number*, \"id_especialidad\": number*, \"id_sede\": number* }` — los seis son requeridos (`*`).\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `201` | `ok` | `datos` trae la franja creada con su `id`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta alguno de los seis campos. |\n| `400` | `El campo fecha debe tener el formato AAAA-MM-DD` | La fecha no cumple el patrón, o es una fecha inexistente como `2026-02-30`. |\n| `400` | `El campo hora_entrada debe tener el formato HH:MM (por ejemplo 09:30)` | Idem `hora_salida`. El cero a la izquierda es obligatorio: `9:00` no se acepta. |\n| `403` | `Un médico solo puede gestionar su propia agenda` | Un `medico` mandó un `id_medico` distinto del suyo. |\n| `400` | `El cuerpo de la petición no es un JSON válido` | El body no parsea como JSON. |\n| `401` | `Token no proporcionado` | Falta el header `Authorization` o no arranca con `Bearer `. |\n| `403` | `No tiene permisos para acceder a este recurso` | El token es válido pero el rol no es `medico` ni `operador`. |\n\n> El formato estricto de las horas no es cosmético: `POST /turnos` decide si la hora pedida cae dentro de la franja comparando `HH:MM` como texto, así que un `9:00` guardado acá dejaría esa franja sin poder reservarse.\n"
+            "description": "### POST /agenda\nCarga una franja de agenda. Se pueden cargar varias franjas para el mismo médico y la misma fecha, siempre que no se superpongan.\n\n**Rol:** `medico` (solo la propia) u `operador` (la de cualquiera).\n**Headers:** `Authorization: Bearer <token>`, `Content-Type: application/json`.\n**Parámetros:** ninguno.\n**Body:** `{ \"hora_entrada\": \"HH:MM\"*, \"hora_salida\": \"HH:MM\"*, \"fecha\": \"AAAA-MM-DD\"*, \"id_medico\": number*, \"id_especialidad\": number*, \"id_sede\": number* }` — los seis son requeridos (`*`).\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `201` | `ok` | `datos` trae la franja creada con su `id`. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta alguno de los seis campos. |\n| `400` | `El campo fecha debe tener el formato AAAA-MM-DD` | La fecha no cumple el patrón, o es una fecha inexistente como `2026-02-30`. |\n| `400` | `El campo hora_entrada debe tener el formato HH:MM (por ejemplo 09:30)` | Idem `hora_salida`. El cero a la izquierda es obligatorio: `9:00` no se acepta. |\n| `403` | `Un médico solo puede gestionar su propia agenda` | Un `medico` mandó un `id_medico` distinto del suyo. |\n| `400` | `El cuerpo de la petición no es un JSON válido` | El body no parsea como JSON. |\n| `401` | `Token no proporcionado` | Falta el header `Authorization` o no arranca con `Bearer `. |\n| `403` | `No tiene permisos para acceder a este recurso` | El token es válido pero el rol no es `medico` ni `operador`. |\n| `409` | `El médico ya tiene agenda ese día de <entrada> a <salida> en <sede>: los rangos no se pueden superponer` | El médico ya tiene otro rango ese día (en cualquier sede) que se cruza con este. Tocarse en el borde (13:00 y 13:00) no cuenta. |\n\n> El formato estricto de las horas no es cosmético: `POST /turnos` decide si la hora pedida cae dentro de la franja comparando `HH:MM` como texto, así que un `9:00` guardado acá dejaría esa franja sin poder reservarse.\n"
           },
           "response": [
             {
@@ -2547,7 +2547,7 @@
               "raw": "{\n  \"hora_entrada\": \"10:00\",\n  \"hora_salida\": \"14:00\",\n  \"fecha\": \"2026-09-01\",\n  \"id_medico\": {{medicoId}},\n  \"id_especialidad\": 1,\n  \"id_sede\": 1\n}"
             },
             "url": "{{baseUrl}}/agenda/{{agendaId}}",
-            "description": "### PUT /agenda/:id\nModifica una franja de agenda. Es un reemplazo completo: hay que mandar los seis campos.\n\n**Rol:** `medico` (solo la propia) u `operador`.\n**Headers:** `Authorization: Bearer <token>`, `Content-Type: application/json`.\n**Parámetros:** `:id` (path) — id de la franja de agenda.\n**Body:** `{ \"hora_entrada\": \"HH:MM\"*, \"hora_salida\": \"HH:MM\"*, \"fecha\": \"AAAA-MM-DD\"*, \"id_medico\": number*, \"id_especialidad\": number*, \"id_sede\": number* }` — los seis son requeridos (`*`).\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos` trae la franja ya modificada. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta alguno de los seis campos. |\n| `400` | `El campo fecha debe tener el formato AAAA-MM-DD` | La fecha no cumple el patrón, o es una fecha inexistente como `2026-02-30`. |\n| `400` | `El campo hora_entrada debe tener el formato HH:MM (por ejemplo 09:30)` | Idem `hora_salida`. El cero a la izquierda es obligatorio: `9:00` no se acepta. |\n| `404` | `Turno de agenda no encontrado` | No existe una franja con ese `:id`. |\n| `403` | `Un médico solo puede gestionar su propia agenda` | Se valida dos veces: sobre la franja que ya existía y sobre el `id_medico` nuevo, para que un médico no pueda adueñarse de una franja ajena ni ceder la suya. |\n| `401` | `Token no proporcionado` | Falta el header `Authorization` o no arranca con `Bearer `. |\n| `403` | `No tiene permisos para acceder a este recurso` | El token es válido pero el rol no es `medico` ni `operador`. |\n"
+            "description": "### PUT /agenda/:id\nModifica una franja de agenda. Es un reemplazo completo: hay que mandar los seis campos.\n\n**Rol:** `medico` (solo la propia) u `operador`.\n**Headers:** `Authorization: Bearer <token>`, `Content-Type: application/json`.\n**Parámetros:** `:id` (path) — id de la franja de agenda.\n**Body:** `{ \"hora_entrada\": \"HH:MM\"*, \"hora_salida\": \"HH:MM\"*, \"fecha\": \"AAAA-MM-DD\"*, \"id_medico\": number*, \"id_especialidad\": number*, \"id_sede\": number* }` — los seis son requeridos (`*`).\n\n**Respuestas**\n\n| Código | `estado` | Cuándo |\n|---|---|---|\n| `200` | `ok` | `datos` trae la franja ya modificada. |\n| `400` | `Faltan campos requeridos: <lista>` | Falta alguno de los seis campos. |\n| `400` | `El campo fecha debe tener el formato AAAA-MM-DD` | La fecha no cumple el patrón, o es una fecha inexistente como `2026-02-30`. |\n| `400` | `El campo hora_entrada debe tener el formato HH:MM (por ejemplo 09:30)` | Idem `hora_salida`. El cero a la izquierda es obligatorio: `9:00` no se acepta. |\n| `404` | `Turno de agenda no encontrado` | No existe una franja con ese `:id`. |\n| `403` | `Un médico solo puede gestionar su propia agenda` | Se valida dos veces: sobre la franja que ya existía y sobre el `id_medico` nuevo, para que un médico no pueda adueñarse de una franja ajena ni ceder la suya. |\n| `401` | `Token no proporcionado` | Falta el header `Authorization` o no arranca con `Bearer `. |\n| `403` | `No tiene permisos para acceder a este recurso` | El token es válido pero el rol no es `medico` ni `operador`. |\n| `409` | `El médico ya tiene agenda ese día de <entrada> a <salida> en <sede>: los rangos no se pueden superponer` | El médico ya tiene otro rango ese día (en cualquier sede) que se cruza con este. Tocarse en el borde (13:00 y 13:00) no cuenta. |\n"
           },
           "response": [
             {
@@ -7161,6 +7161,40 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"hora_entrada\": \"13:00\",\n  \"hora_salida\": \"09:00\",\n  \"fecha\": \"2026-09-03\",\n  \"id_medico\": {{medicoId}},\n  \"id_especialidad\": 1,\n  \"id_sede\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /agenda - rango superpuesto en otra sede (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Informa la superposición', () => pm.expect(pm.response.json().estado).to.include('no se pueden superponer'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMedico}}"
+              }
+            ],
+            "url": "{{baseUrl}}/agenda",
+            "description": "Caso de error: un médico no puede tener dos rangos que se crucen el mismo día, ni siquiera en sedes distintas (si no, las dos sedes podrían darle turno a la misma hora). Se cruza con la agenda base del folder Turnos (`{{agendaTurnoId}}`: 2026-09-02 de 09:00 a 13:00 en la sede 1). Rangos que solo se tocan en el borde (por ejemplo 13:00-17:00) sí se permiten. Aplica igual a `PUT /agenda/:id`, excluyendo el propio rango.\n\n| Código | `estado` |\n|---|---|\n| `409` | `El médico ya tiene agenda ese día de <entrada> a <salida> en <sede>: los rangos no se pueden superponer` |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"11:00\",\n  \"hora_salida\": \"15:00\",\n  \"fecha\": \"2026-09-02\",\n  \"id_medico\": {{medicoId}},\n  \"id_especialidad\": 1,\n  \"id_sede\": 2\n}"
             }
           }
         }

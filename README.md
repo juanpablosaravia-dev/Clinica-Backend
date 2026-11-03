@@ -154,9 +154,11 @@ Si el INSERT del log falla, se loguea en consola pero **no** tumba la operación
 la operación ya había terminado bien, y el log es un registro secundario.
 
 - **Sedes, especialidades y coberturas**: las tres acciones (`ALTA`, `MODIFICACION`, `BAJA`).
-- **Usuarios**: solo el `ALTA` (`POST /auth/registro`), porque las consignas de las semanas 1 a 3
-  no definieron endpoints de modificación ni baja de usuarios. Como el registro es público y no
-  hay token, el autor del log es el propio usuario recién creado (se registró a sí mismo).
+- **Usuarios**: el `ALTA` y la `MODIFICACION` que hace el admin (`POST /usuarios` y
+  `PUT /usuarios/:id`), la `MODIFICACION` de sus propios datos que hace el paciente
+  (`PUT /auth/perfil`) y el `ALTA` del registro de pacientes (`POST /auth/registro`). No hay
+  endpoint de baja de usuarios. Como el registro es público y no lleva token, en ese caso el autor
+  del log es el propio usuario recién creado.
 
 Se consulta con `GET /auditoria` (solo rol `admin`), con filtros opcionales y combinables por
 `id_usuario`, `entidad`, `desde` y `hasta`. El rango de fechas compara contra `DATE(fecha)`

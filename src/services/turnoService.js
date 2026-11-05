@@ -8,6 +8,7 @@ import {
   validarLargoMaximo,
 } from '../utils/validaciones.js';
 import { generarHorarios } from '../utils/horarios.js';
+import { fechaDeHoy } from '../utils/fechas.js';
 import {
   crearNotificacion,
   formatearFechaHumana,
@@ -273,6 +274,12 @@ export async function atenderTurno(id, datos, usuario) {
     }
     if (turno.estado !== ESTADO_CONFIRMADO) {
       throw new ErrorHttp(409, 'No se puede atender un turno cancelado');
+    }
+    // Se compara solo el día y no la hora: un turno de hoy se puede marcar como
+    // atendido aunque todavía no sea su horario (el paciente puede llegar antes).
+    // Las dos fechas son AAAA-MM-DD, así que alcanza con comparar los textos.
+    if (turno.fecha > fechaDeHoy()) {
+      throw new ErrorHttp(409, 'No se puede atender un turno de una fecha futura');
     }
 
     await conexion.query('UPDATE turno SET estado = ? WHERE id = ?', [ESTADO_ATENDIDO, turno.id]);
